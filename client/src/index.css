@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #6366f1;
+  --color-accent: #06b6d4;
+}
+
+/* Resetting Body for Transparency */
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #010413; /* Very dark base */
+  color: white;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  overflow-x: hidden;
+  cursor: none !important;
+}
+
+/* 1. Grain Texture (Essential for breaking solid colors) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* 2. Glass Panels for UI */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(30px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+body {
+  margin: 0;
+  background-color: #010413; /* Sirf base color */
+  color: white;
+}
+
+/* Home page ke sections ko force transparent karne ke liye */
+section, main {
+  background-color: transparent !important;
+} 
+/* Custom Cursor ko Hardware Accelerated banayein */
+.custom-cursor {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  /* Performance fixes */
+  will-change: transform; 
+  transform: translateZ(0); 
+  backface-visibility: hidden;
+}
+
+/* Browser ke default rendering ko behtar karein */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

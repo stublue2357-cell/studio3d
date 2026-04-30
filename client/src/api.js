@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Backend server ka base rasta (Localhost)
 // Backend server ka base rasta (Dynamic for Deployment)
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://studio3d-production.up.railway.app/';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://studio3d-production.up.railway.app/api';
 const API = axios.create({ baseURL: API_BASE_URL });
 
 // ==========================================

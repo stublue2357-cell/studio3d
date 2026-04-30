@@ -15,7 +15,7 @@ import { Decal, useGLTF, useTexture } from '@react-three/drei';
  * 3. maath: Used for smooth mathematical transitions (easing).
  */
 const Shirt = ({ baseType, aiTexture, overlayTexture }) => {
-  const [modelPath, setModelPath] = React.useState('/shirt_baked.glb');
+  const [modelPath, setModelPath] = React.useState('/public/shirt_baked.glb');
 
   // Check if the custom .glb file exists for this specific baseType
   React.useEffect(() => {

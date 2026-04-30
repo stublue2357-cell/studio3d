@@ -34,7 +34,7 @@ const AIStudio = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const backendUrl = import.meta.env.VITE_API_URL || 'https://studio3d-production.up.railway.app/';
+      const backendUrl = import.meta.env.VITE_API_URL || 'https://studio3d-production.up.railway.app/api';
       const response = await fetch(`${backendUrl}/ai/generate`, {
         method: 'POST',
         headers: { 

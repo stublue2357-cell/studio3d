@@ -17,7 +17,8 @@ const Checkout = () => {
     address: '',
     city: '',
     zip: '',
-    phone: '' // Phone field add ki kyunke Order Model mein zaroori hai
+    phone: '', 
+    customerNote: '' 
   });
 
   const cartContext = useCart() || {};
@@ -61,6 +62,7 @@ const Checkout = () => {
           city: shippingData.city,
           phone: shippingData.phone || "000-000-0000" // Form mein phone input zaroori hai
         },
+        customerNote: shippingData.customerNote,
         paymentMethod: paymentMethod
       };
 
@@ -119,6 +121,10 @@ const Checkout = () => {
                 <div className="space-y-2">
                   <label className="text-[9px] font-bold uppercase tracking-widest text-slate-500 ml-1">Contact Protocol (Phone)</label>
                   <input required name="phone" value={shippingData.phone} onChange={handleInputChange} type="text" placeholder="+92 000 0000" className="w-full bg-white/[0.03] border border-white/10 px-6 py-4 rounded-xl outline-none focus:border-indigo-400 text-[11px] font-bold tracking-widest text-white transition-all" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-[9px] font-bold uppercase tracking-widest text-slate-500 ml-1">Special Instructions / Custom Notes</label>
+                  <textarea name="customerNote" value={shippingData.customerNote} onChange={handleInputChange} placeholder="SPECIFY SPECIAL REQUESTS OR DESIGN INSTRUCTIONS FOR THE ADMIN..." className="w-full h-32 bg-white/[0.03] border border-white/10 px-6 py-4 rounded-xl outline-none focus:border-indigo-400 text-[11px] font-bold tracking-widest text-white transition-all resize-none" />
                 </div>
               </div>
             </div>

@@ -20,6 +20,8 @@ const OrderSchema = new mongoose.Schema({
     phone: { type: String, required: true }
   },
   status: { type: String, default: 'Pending' }, // Pending, Shipped, Delivered
+  customerNote: { type: String },
+  adminFeedback: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 

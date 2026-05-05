@@ -2,10 +2,17 @@ const router = require('express').Router();
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { authMiddleware, ownerOnly } = require('../middleware/adminAuth');
+const { sendPasswordResetEmail } = require('../utils/emailService');
 
 // --- 1. REGISTER API ---
 router.post('/register', async (req, res) => {
+  // --- MOCK BYPASS ---
+  if (global.isSimulationMode) {
+      console.log("SIM_MODE: REGISTER_BYPASS");
+      return res.status(201).json({ msg: "SUCCESS // MOCK_SYNTHESIS" });
+  }
   try {
     const { name, email, password, adminSecret } = req.body;
     
@@ -51,6 +58,17 @@ router.post('/register', async (req, res) => {
 
 // --- 2. LOGIN API ---
 router.post('/login', async (req, res) => {
+  // --- MOCK BYPASS ---
+  if (global.isSimulationMode) {
+      console.log("SIM_MODE: LOGIN_BYPASS_FOR_USER:", req.body.email);
+      const isDeveloper = req.body.email === "haseebsaleem312@gmail.com";
+      const finalRole = isDeveloper ? 'developer' : 'owner';
+      const mockToken = jwt.sign({ id: "dev_id_786", role: finalRole }, process.env.JWT_SECRET || "Secure_Studio_Fallback_Key", { expiresIn: '24h' });
+      return res.json({
+          token: mockToken,
+          user: { id: "dev_id_786", name: isDeveloper ? "HASEEB_DEVELOPER" : "STUDIO_PILOT", email: req.body.email, role: finalRole }
+      });
+  }
   try {
     const { email, password } = req.body;
     
@@ -174,6 +192,108 @@ router.post('/change-password', authMiddleware, async (req, res) => {
         res.json({ msg: "SUCCESS // CIPHER_RECONFIGURED" });
     } catch (err) {
         res.status(500).json({ msg: "SERVER_ERROR // RECONFIGURATION_FAILED" });
+    }
+});
+
+// --- 7. FORGOT PASSWORD ---
+router.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email: email.toLowerCase() });
+        
+        if (!user) return res.status(404).json({ msg: "IDENTITY_NOT_FOUND" });
+
+        // Generate Reset Token
+        const resetToken = crypto.randomBytes(20).toString('hex');
+        
+        // Hash and set to user field
+        user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+        user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+        await user.save();
+
+        // Create reset URL
+        const resetUrl = `${req.headers.origin}/reset-password/${resetToken}`;
+        
+        await sendPasswordResetEmail(user.email, user.name, resetUrl);
+
+        res.json({ msg: "SUCCESS // RECOVERY_TRANSMISSION_SENT" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ msg: "SERVER_ERROR // RECOVERY_FAILED" });
+    }
+});
+
+// --- 8. RESET PASSWORD ---
+router.post('/reset-password/:token', async (req, res) => {
+    try {
+        const resetPasswordToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+
+        const user = await User.findOne({
+            resetPasswordToken,
+            resetPasswordExpire: { $gt: Date.now() }
+        });
+
+        if (!user) return res.status(400).json({ msg: "INVALID_OR_EXPIRED_TOKEN" });
+
+        // Set new password
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(req.body.password, salt);
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpire = undefined;
+
+        await user.save();
+
+        res.json({ msg: "SUCCESS // CIPHER_UPDATED" });
+    } catch (err) {
+        res.status(500).json({ msg: "SERVER_ERROR // RESET_FAILED" });
+    }
+});
+
+// --- 9. GOOGLE LOGIN ---
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+router.post('/google-login', async (req, res) => {
+    try {
+        const { idToken } = req.body;
+        const ticket = await client.verifyIdToken({
+            idToken,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+
+        const { name, email } = ticket.getPayload();
+
+        let user = await User.findOne({ email: email.toLowerCase() });
+
+        if (!user) {
+            // Create new user if doesn't exist
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(crypto.randomBytes(16).toString('hex'), salt);
+            
+            user = new User({
+                name,
+                email: email.toLowerCase(),
+                password: hashedPassword,
+                role: 'user'
+            });
+            await user.save();
+        }
+
+        const token = jwt.sign(
+            { id: user._id, role: user.role },
+            process.env.JWT_SECRET || "Secure_Studio_Fallback_Key",
+            { expiresIn: '24h' }
+        );
+
+        res.json({
+            token,
+            user: { id: user._id, name: user.name, email: user.email, role: user.role }
+        });
+
+    } catch (err) {
+        console.error("GOOGLE_LOGIN_ERROR:", err);
+        res.status(500).json({ msg: "SERVER_ERROR // GOOGLE_AUTH_FAILED" });
     }
 });
 

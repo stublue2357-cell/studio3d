@@ -27,17 +27,41 @@ const DesignLab = () => {
   const canvasRef = useRef(null);
   const modelViewerRef = useRef(null);
 
-  const glbModels = {
-    't-shirt': baseProduct?.modelUrl || "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
-    'full-arm': baseProduct?.modelUrl || "https://modelviewer.dev/shared-assets/models/RobotExpressive.glb",
-    'half-sleeve': baseProduct?.modelUrl || "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
-    'hoodie': baseProduct?.modelUrl || "https://modelviewer.dev/shared-assets/models/RobotExpressive.glb",
-    'sweatshirt': baseProduct?.modelUrl || "https://modelviewer.dev/shared-assets/models/Horse.glb"
-  };
+  const [modelPath, setModelPath] = useState("https://modelviewer.dev/shared-assets/models/Astronaut.glb");
+
+  useEffect(() => {
+    const fileName = apparel.toLowerCase().replace(/[\s-]/g, '_') + '.glb';
+    fetch(fileName, { method: 'HEAD' })
+      .then(res => {
+        const contentType = res.headers.get('content-type');
+        if (res.ok && contentType && !contentType.includes('text/html')) {
+          setModelPath(fileName);
+        } else {
+          // Fallback to default external models if local file not found
+          const defaults = {
+            't-shirt': "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
+            'full-arm': "https://modelviewer.dev/shared-assets/models/RobotExpressive.glb",
+            'hoodie': "https://modelviewer.dev/shared-assets/models/RobotExpressive.glb",
+            'sweatshirt': "https://modelviewer.dev/shared-assets/models/Horse.glb"
+          };
+          setModelPath(baseProduct?.modelUrl || defaults[apparel] || defaults['t-shirt']);
+        }
+      })
+      .catch(() => {
+        setModelPath(baseProduct?.modelUrl || "https://modelviewer.dev/shared-assets/models/Astronaut.glb");
+      });
+  }, [apparel, baseProduct]);
 
   const handleAddText = () => {
     const id = Date.now();
-    setCanvasElements([...canvasElements, { id, type: 'text', content: 'NEW TEXT', x: 50, y: 50, scale: 1, color: textColor }]);
+    // Centered placement: 300px width / 2 = 150, minus estimated text half-width
+    setCanvasElements([...canvasElements, { id, type: 'text', content: 'NEW TEXT', x: 100, y: 180, scale: 1, color: textColor }]);
+    setActiveElementId(id);
+  };
+
+  const handleAddLine = () => {
+    const id = Date.now();
+    setCanvasElements([...canvasElements, { id, type: 'line', width: 100, height: 4, x: 100, y: 200, scale: 1, color: textColor }]);
     setActiveElementId(id);
   };
 
@@ -47,7 +71,8 @@ const DesignLab = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         const id = Date.now();
-        setCanvasElements([...canvasElements, { id, type: 'image', content: reader.result, x: 50, y: 50, scale: 1 }]);
+        // Centered placement: 300x400 canvas -> 70, 150
+        setCanvasElements([...canvasElements, { id, type: 'image', content: reader.result, x: 70, y: 150, scale: 1 }]);
         setActiveElementId(id);
       };
       reader.readAsDataURL(file);
@@ -66,6 +91,21 @@ const DesignLab = () => {
     }
     e.target.value = ''; // Reset input
   };
+
+  // Keyboard Shortcuts for Deletion
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+        if ((e.key === 'Delete' || e.key === 'Backspace') && activeElementId) {
+            // Check if user is not typing in an input
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                setCanvasElements(els => els.filter(el => el.id !== activeElementId));
+                setActiveElementId(null);
+            }
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeElementId]);
 
   const handleApplyTo3D = async () => {
     if (!canvasRef.current) return;
@@ -130,171 +170,145 @@ const DesignLab = () => {
   };
 
   return (
-    <div className="space-y-0 animate-in fade-in duration-700 min-h-screen bg-[#020204] flex flex-col overflow-hidden">
+    <div className="flex flex-col bg-[#020204] pt-[0px] min-h-screen overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-grow border-t border-white/5 relative items-stretch md:pl-20">
       
-      {/* Header */}
-      <div className="flex justify-between items-end border-b border-white/5 pb-4 px-6 pt-4 shrink-0 bg-[#020204] z-40">
-        <div>
-          <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white leading-none mb-1">
-            Studio <span className="text-cyan-400">3D</span>
-          </h2>
-          <p className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-black">Professional Synthesis Suite</p>
-        </div>
-        <div className="flex gap-4">
-          <button 
-            onClick={handleApplyTo3D} disabled={loading}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-indigo-500 transition-all"
-          >
-            {loading ? 'SYNCHRONIZING...' : 'APPLY TO 3D MODEL'}
-          </button>
-          <button 
-            onClick={handleOrder} disabled={loading || !modelTexture}
-            className="px-6 py-3 bg-white text-black rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-30"
-          >
-            Confirm & Vault
-          </button>
-        </div>
+      {/* SIDEBAR - Fixed Left */}
+      <div className="fixed bottom-0 left-0 right-0 h-20 md:h-auto md:w-20 bg-[#020204] border-t md:border-t-0 md:border-r border-white/5 flex flex-row md:flex-col items-center justify-around md:justify-start md:pt-[40px] md:pb-4 gap-2 z-[90] shrink-0 md:top-0 md:bottom-0">
+         {[
+           { id: 'text', icon: 'T', label: 'Text', font: 'serif' },
+           { id: 'shapes', icon: '━', label: 'Lines' },
+           { id: 'uploads', icon: '☁️', label: 'Upload' },
+           { id: 'layers', icon: '☰', label: 'Layers' },
+           { id: 'colors', icon: '🎨', label: 'Colors' }
+         ].map(item => (
+           <button 
+             key={item.id}
+             onClick={() => setActiveSidebarPanel(activeSidebarPanel === item.id ? null : item.id)} 
+             className={`p-2 md:p-4 flex flex-col items-center gap-1 md:gap-2 rounded-xl w-14 md:w-16 transition-all ${activeSidebarPanel === item.id ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+           >
+             <span className={`text-lg md:text-xl leading-none ${item.font === 'serif' ? 'font-serif' : ''}`}>{item.icon}</span>
+             <span className="text-[7px] md:text-[9px] uppercase font-black">{item.label}</span>
+           </button>
+         ))}
       </div>
 
-      {/* Main Workspace Layout */}
-      <div className="flex flex-grow relative overflow-hidden">
-        
-        {/* LEFT SIDEBAR ICONS (Canva Style) */}
-        <div className="w-20 bg-[#020204] border-r border-white/5 flex flex-col items-center py-4 gap-2 z-30 shrink-0">
-           <button onClick={() => setActiveSidebarPanel('text')} className={`p-4 flex flex-col items-center gap-2 rounded-xl w-16 transition-all ${activeSidebarPanel==='text' ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
-              <span className="text-xl font-serif leading-none">T</span>
-              <span className="text-[9px] uppercase font-black">Text</span>
-           </button>
-           <button onClick={() => setActiveSidebarPanel('uploads')} className={`p-4 flex flex-col items-center gap-2 rounded-xl w-16 transition-all ${activeSidebarPanel==='uploads' ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
-              <span className="text-xl leading-none">☁️</span>
-              <span className="text-[9px] uppercase font-black">Upload</span>
-           </button>
-           <button onClick={() => setActiveSidebarPanel('layers')} className={`p-4 flex flex-col items-center gap-2 rounded-xl w-16 transition-all ${activeSidebarPanel==='layers' ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
-              <span className="text-xl leading-none">☰</span>
-              <span className="text-[9px] uppercase font-black">Layers</span>
-           </button>
-           <button onClick={() => setActiveSidebarPanel('colors')} className={`p-4 flex flex-col items-center gap-2 rounded-xl w-16 transition-all ${activeSidebarPanel==='colors' ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
-              <span className="text-xl leading-none">🎨</span>
-              <span className="text-[9px] uppercase font-black">Colors</span>
-           </button>
-        </div>
+      {/* FLYOUT PANELS */}
+      <AnimatePresence>
+        {activeSidebarPanel && (
+          <motion.div 
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 320, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed inset-x-0 bottom-20 md:bottom-0 md:relative md:inset-auto md:w-[320px] bg-[#050508] border-t md:border-t-0 md:border-r border-white/5 z-[85] shadow-[20px_0_30px_rgba(0,0,0,0.5)] shrink-0 flex flex-col max-h-[60vh] md:max-h-none overflow-y-auto"
+          >
+             <div className="p-6 w-full md:w-[320px] space-y-8 flex-grow">
+                {/* Text Panel */}
+                {activeSidebarPanel === 'text' && (
+                  <div className="space-y-4">
+                    <h3 className="text-white font-bold tracking-wider mb-4 uppercase text-[10px]">Typography Protocol</h3>
+                    <button 
+                      onClick={handleAddText}
+                      className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-[9px] font-black uppercase tracking-widest text-white transition-all shadow-2xl"
+                    >
+                      + Initialize Heading
+                    </button>
+                  </div>
+                )}
 
-        {/* FLYOUT PANELS */}
-        <AnimatePresence>
-          {activeSidebarPanel && (
-            <motion.div 
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 320, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ type: "tween", duration: 0.2 }}
-              className="bg-[#050508] border-r border-white/5 h-full overflow-y-auto flex flex-col z-20 shadow-[20px_0_30px_rgba(0,0,0,0.5)] shrink-0 custom-scrollbar"
-            >
-               <div className="p-6 w-[320px] space-y-8">
-                 {/* Text Panel */}
-                 {activeSidebarPanel === 'text' && (
+                {/* Shapes Panel */}
+                {activeSidebarPanel === 'shapes' && (
+                  <div className="space-y-4">
+                    <h3 className="text-white font-bold tracking-wider mb-4 uppercase text-[10px]">Geometry Engine</h3>
+                    <button 
+                      onClick={handleAddLine}
+                      className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-[9px] font-black uppercase tracking-widest text-white transition-all shadow-2xl"
+                    >
+                      + Construct Line
+                    </button>
+                  </div>
+                )}
+
+                {/* Uploads Panel */}
+                {activeSidebarPanel === 'uploads' && (
+                  <div className="space-y-4">
+                    <h3 className="text-white font-bold tracking-wider mb-4 uppercase text-[10px]">Media Uplink</h3>
+                    <button 
+                      onClick={() => fileInputRef.current.click()}
+                      className="w-full py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-white transition-all"
+                    >
+                      Upload Graphic
+                    </button>
+                    <input type="file" hidden ref={fileInputRef} onChange={handleImageUpload} accept="image/*" />
+                  </div>
+                )}
+
+                {/* Layers Panel */}
+                {activeSidebarPanel === 'layers' && (
                    <div className="space-y-4">
-                     <h3 className="text-white font-bold tracking-wider mb-4">Text Elements</h3>
-                     <button 
-                       onClick={handleAddText}
-                       className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-black uppercase tracking-widest text-white transition-all shadow-[0_0_15px_rgba(79,70,229,0.3)]"
-                     >
-                       + Add a heading
-                     </button>
+                     <h3 className="text-white font-bold tracking-wider mb-4 uppercase text-[10px]">Neural Layers</h3>
+                     <div className="space-y-2">
+                       {canvasElements.length === 0 ? (
+                         <p className="text-[8px] text-slate-500 text-center py-8 bg-white/5 rounded-xl border border-dashed border-white/10 uppercase font-black">No Active Layers</p>
+                       ) : (
+                         [...canvasElements].reverse().map((el, idx) => (
+                           <div 
+                             key={el.id}
+                             onClick={() => setActiveElementId(el.id)}
+                             className={`flex justify-between items-center p-3 rounded-xl border transition-all cursor-pointer ${activeElementId === el.id ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:text-white'}`}
+                           >
+                             <div className="flex items-center gap-3 overflow-hidden">
+                               <span className="text-[8px] font-black truncate max-w-[150px] uppercase">
+                                 {el.type === 'text' ? (el.content || 'Text') : el.type === 'line' ? 'Geometry Line' : 'Image Graphic'}
+                               </span>
+                             </div>
+                             <button 
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 setCanvasElements(els => els.filter(layer => layer.id !== el.id));
+                                 if (activeElementId === el.id) setActiveElementId(null);
+                               }}
+                               className="text-red-500/50 hover:text-red-500 hover:bg-red-500/10 p-1.5 rounded transition-colors"
+                             >
+                               ✕
+                             </button>
+                           </div>
+                         ))
+                       )}
+                     </div>
                    </div>
-                 )}
+                )}
 
-                 {/* Uploads Panel */}
-                 {activeSidebarPanel === 'uploads' && (
-                   <div className="space-y-4">
-                     <h3 className="text-white font-bold tracking-wider mb-4">Upload Media</h3>
-                     <button 
-                       onClick={() => fileInputRef.current.click()}
-                       className="w-full py-4 bg-fuchsia-600 hover:bg-fuchsia-500 rounded-xl text-xs font-black uppercase tracking-widest text-white transition-all shadow-[0_0_15px_rgba(192,38,211,0.3)]"
-                     >
-                       Upload File
-                     </button>
-                     <input type="file" hidden ref={fileInputRef} onChange={handleImageUpload} accept="image/*" />
+                {/* Colors Panel */}
+                {activeSidebarPanel === 'colors' && (
+                   <div className="space-y-8">
+                     <div className="space-y-4">
+                       <h3 className="text-white font-bold tracking-wider mb-4 uppercase text-[10px]">Fabric Color</h3>
+                       <div className="flex gap-3 flex-wrap">
+                         {['#ffffff', '#000000', '#1a1a1a', '#e11d48', '#2563eb', '#16a34a', '#fbbf24'].map(c => (
+                           <button 
+                             key={c} onClick={() => setColor(c)}
+                             className={`w-10 h-10 rounded-full border-2 transition-all duration-300 ${color === c ? 'border-indigo-500 scale-110' : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105'}`}
+                             style={{ backgroundColor: c }}
+                           />
+                         ))}
+                       </div>
+                     </div>
                    </div>
-                 )}
+                )}
+             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-                 {/* Layers Panel */}
-                 {activeSidebarPanel === 'layers' && (
-                    <div className="space-y-4">
-                      <h3 className="text-white font-bold tracking-wider mb-4">Layers</h3>
-                      <div className="space-y-2">
-                        {canvasElements.length === 0 ? (
-                          <p className="text-xs text-slate-500 text-center py-8 bg-white/5 rounded-xl border border-dashed border-white/10">No layers</p>
-                        ) : (
-                          [...canvasElements].reverse().map((el, idx) => (
-                            <div 
-                              key={el.id}
-                              onClick={() => setActiveElementId(el.id)}
-                              className={`flex justify-between items-center p-3 rounded-xl border transition-all cursor-pointer ${activeElementId === el.id ? 'bg-cyan-500/10 border-cyan-500/50 text-cyan-400' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:text-white'}`}
-                            >
-                              <div className="flex items-center gap-3 overflow-hidden">
-                                <span className="text-xs opacity-50 font-mono">{canvasElements.length - idx}</span>
-                                <span className="text-xs font-bold truncate max-w-[150px]">
-                                  {el.type === 'text' ? (el.content || 'Text') : 'Image Graphic'}
-                                </span>
-                              </div>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setCanvasElements(els => els.filter(layer => layer.id !== el.id));
-                                  if (activeElementId === el.id) setActiveElementId(null);
-                                }}
-                                className="text-red-500/50 hover:text-red-500 hover:bg-red-500/10 p-1.5 rounded transition-colors"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                 )}
-
-                 {/* Colors Panel */}
-                 {activeSidebarPanel === 'colors' && (
-                    <div className="space-y-8">
-                      <div className="space-y-4">
-                        <h3 className="text-white font-bold tracking-wider mb-4">Fabric Color</h3>
-                        <div className="flex gap-3 flex-wrap">
-                          {['#ffffff', '#000000', '#1a1a1a', '#e11d48', '#2563eb', '#16a34a', '#fbbf24'].map(c => (
-                            <button 
-                              key={c} onClick={() => setColor(c)}
-                              className={`w-12 h-12 rounded-full border-2 transition-all duration-300 ${color === c ? 'border-white scale-110 shadow-[0_0_15px_rgba(255,255,255,0.3)]' : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105'}`}
-                              style={{ backgroundColor: c }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <div className="space-y-4">
-                        <h3 className="text-white font-bold tracking-wider mb-4">Default Ink</h3>
-                        <div className="flex gap-3 flex-wrap">
-                          {['#ffffff', '#000000', '#fbbf24', '#f472b6', '#22d3ee', '#a855f7', '#10b981'].map(c => (
-                            <button 
-                              key={c} onClick={() => setTextColor(c)}
-                              className={`w-12 h-12 rounded-full border-2 transition-all duration-300 ${textColor === c ? 'border-cyan-400 scale-110 shadow-[0_0_15px_rgba(6,182,212,0.3)]' : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105'}`}
-                              style={{ backgroundColor: c }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                 )}
-               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* 3D Preview Section */}
-        <div className="flex-grow relative bg-[#0a0a0e] flex items-center justify-center overflow-hidden z-10" onClick={() => setActiveSidebarPanel(null)}>
-          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+      {/* 3D Preview Section */}
+      <div className="flex-grow relative bg-[#0a0a0e] flex items-center justify-center overflow-hidden z-10 min-h-[50vh]" onClick={() => { setActiveSidebarPanel(null); setActiveElementId(null); }}>
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
           
           <model-viewer
             ref={modelViewerRef}
-            src={glbModels[apparel]}
+            src={modelPath}
             alt="3D Apparel Model"
             auto-rotate={!activeElementId}
             camera-controls
@@ -302,164 +316,146 @@ const DesignLab = () => {
             environment-image="neutral"
             style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
             exposure="1"
-            onClick={() => {
-               // Optional: Deselect when clicking 3D model outside canvas
-            }}
           />
 
-          <div className="absolute top-8 right-8 flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Online</span>
-          </div>
-
-          {/* OVERLAID INTERACTIVE DESIGN CANVAS - Invisible Borders */}
+          {/* OVERLAID INTERACTIVE DESIGN CANVAS */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
             <div 
               ref={canvasRef}
-              onClick={(e) => {
-                if (e.target === canvasRef.current) {
-                  setActiveElementId(null);
-                }
-              }}
-              className="w-[300px] h-[400px] pointer-events-auto relative mt-[-40px] group transition-all"
+              className="w-[300px] h-[400px] pointer-events-auto relative mt-[-40px]"
             >
               {canvasElements.map(el => (
                 <motion.div 
-                  key={el.id} 
-                  drag 
-                  dragConstraints={canvasRef}
-                  dragElastic={0}
-                  dragMomentum={false}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveElementId(el.id);
-                  }}
-                  className={`absolute cursor-move origin-center ${activeElementId === el.id ? 'ring-1 ring-cyan-400 ring-offset-0 bg-cyan-400/10' : 'hover:ring-1 hover:ring-white/20'}`}
+                  key={el.id} drag dragConstraints={canvasRef} dragElastic={0} dragMomentum={false}
+                  onDragStart={() => setActiveElementId(el.id)}
+                  onClick={(e) => { e.stopPropagation(); setActiveElementId(el.id); }}
+                  className={`absolute cursor-move origin-center ${activeElementId === el.id ? 'ring-1 ring-indigo-500 bg-indigo-500/10 z-50' : 'hover:ring-1 hover:ring-white/20 z-10'}`}
                   style={{ left: el.x, top: el.y, scale: el.scale || 1 }}
                 >
                   {el.type === 'text' ? (
-                    <span 
-                      className="text-4xl font-black uppercase tracking-tighter drop-shadow-md whitespace-nowrap px-1 block"
-                      style={{ color: el.color || textColor }}
-                    >
-                      {el.content}
-                    </span>
+                    <span className="text-4xl font-black uppercase tracking-tighter drop-shadow-md whitespace-nowrap px-1 block" style={{ color: el.color || textColor }}>{el.content}</span>
+                  ) : el.type === 'line' ? (
+                    <div 
+                      style={{ 
+                        width: `${el.width || 100}px`, 
+                        height: `${el.height || 4}px`, 
+                        backgroundColor: el.color || textColor,
+                        borderRadius: '10px'
+                      }} 
+                    />
                   ) : (
                     <img src={el.content} className="w-40 h-auto object-contain drop-shadow-md pointer-events-none" alt="" />
-                  )}
-
-                  {/* Canva-style Resizing Handles (Visual Only) */}
-                  {activeElementId === el.id && (
-                     <>
-                       <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border border-cyan-400 rounded-full" />
-                       <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border border-cyan-400 rounded-full" />
-                       <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border border-cyan-400 rounded-full" />
-                       <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border border-cyan-400 rounded-full" />
-                     </>
                   )}
                 </motion.div>
               ))}
             </div>
           </div>
-        </div>
 
-        {/* Selected Element Edit Panel (Right Slide-out) */}
-        <AnimatePresence>
-          {activeElementId && (
-            <motion.div 
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 300, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ type: "tween", duration: 0.2 }}
-              className="bg-[#050508] border-l border-white/5 h-full z-20 shadow-[-20px_0_30px_rgba(0,0,0,0.5)] flex flex-col shrink-0 custom-scrollbar overflow-y-auto"
-            >
-              <div className="p-6 w-[300px] space-y-6">
-                <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                  <h3 className="text-white font-bold tracking-wider">Edit Element</h3>
-                  <button 
-                    onClick={() => setActiveElementId(null)}
-                    className="text-xs text-slate-500 hover:text-white px-2 py-1 bg-white/5 rounded"
-                  >
-                    Done
-                  </button>
-                </div>
-                
-                <div className="space-y-6">
+          <div className="absolute top-8 right-8 flex items-center gap-2 z-40 bg-black/40 px-3 py-1.5 rounded-full border border-white/5 backdrop-blur-md">
+            <div className={`w-2 h-2 rounded-full ${loading ? 'bg-yellow-500 animate-pulse' : 'bg-cyan-500'}`} />
+            <span className="text-[9px] font-black uppercase tracking-widest text-white">
+              {loading ? 'Processing...' : 'Active Node'}
+            </span>
+          </div>
+
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:right-8 z-40 flex gap-4 w-full md:w-auto px-6">
+              <button 
+                onClick={handleApplyTo3D} disabled={loading}
+                className="flex-1 md:flex-none px-8 py-4 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-2xl"
+              >
+                Apply to 3D
+              </button>
+              <button 
+                onClick={handleOrder} disabled={loading || !modelTexture}
+                className="flex-1 md:flex-none px-8 py-4 bg-white text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-30 shadow-2xl"
+              >
+                Confirm & Vault
+              </button>
+          </div>
+      </div>
+
+      {/* RIGHT EDIT PANEL */}
+      <AnimatePresence>
+        {activeElementId && (
+          <motion.div 
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 300, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            className="bg-[#050508] border-l border-white/5 h-full z-[85] shadow-[-20px_0_30px_rgba(0,0,0,0.5)] flex flex-col shrink-0 overflow-y-auto"
+          >
+            <div className="p-6 w-[300px] space-y-6">
+               <h3 className="text-white font-bold tracking-wider text-[10px] uppercase border-b border-white/5 pb-4">Configuration</h3>
+               
+               <div className="space-y-6">
                   <div className="space-y-3">
-                    <span className="text-xs text-slate-400 block font-bold tracking-wide">Scale / Size</span>
+                    <span className="text-[9px] text-slate-500 block font-black uppercase tracking-widest">Dimension Scale</span>
                     <input 
                       type="range" min="0.2" max="3" step="0.1"
                       value={canvasElements.find(e => e.id === activeElementId)?.scale || 1}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value);
-                        setCanvasElements(els => els.map(el => el.id === activeElementId ? { ...el, scale: val } : el));
-                      }}
-                      className="w-full accent-cyan-400 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                      onChange={(e) => setCanvasElements(els => els.map(el => el.id === activeElementId ? { ...el, scale: parseFloat(e.target.value) } : el))}
+                      className="w-full accent-indigo-500 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer"
                     />
                   </div>
 
                   {canvasElements.find(e => e.id === activeElementId)?.type === 'text' && (
-                    <>
-                      <div className="space-y-3">
-                        <span className="text-xs text-slate-400 block font-bold tracking-wide">Text Content</span>
-                        <input 
-                          type="text"
-                          value={canvasElements.find(e => e.id === activeElementId)?.content || ''}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setCanvasElements(els => els.map(el => el.id === activeElementId ? { ...el, content: val } : el));
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') setActiveElementId(null);
-                          }}
-                          className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400 transition-colors"
-                          placeholder="Text..."
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <span className="text-xs text-slate-400 block font-bold tracking-wide">Text Color</span>
-                        <div className="flex items-center gap-3">
-                          <input 
-                            type="color" 
-                            value={canvasElements.find(e => e.id === activeElementId)?.color || textColor}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setCanvasElements(els => els.map(el => el.id === activeElementId ? { ...el, color: val } : el));
-                            }}
-                            className="w-12 h-12 rounded-lg cursor-pointer border-0 bg-transparent p-0"
-                          />
-                          <span className="text-sm font-mono text-white">{canvasElements.find(e => e.id === activeElementId)?.color || textColor}</span>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {canvasElements.find(e => e.id === activeElementId)?.type === 'image' && (
                     <div className="space-y-3">
-                      <span className="text-xs text-slate-400 block font-bold tracking-wide">Replace Graphic</span>
-                      <label className="cursor-pointer block px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-black uppercase tracking-widest text-white transition-all text-center w-full">
-                        Upload New Image
-                        <input type="file" hidden onChange={handleReplaceImage} accept="image/*" />
-                      </label>
+                      <span className="text-[9px] text-slate-500 block font-black uppercase tracking-widest">Text Input</span>
+                      <input 
+                        type="text"
+                        value={canvasElements.find(e => e.id === activeElementId)?.content || ''}
+                        onChange={(e) => setCanvasElements(els => els.map(el => el.id === activeElementId ? { ...el, content: e.target.value } : el))}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-[11px] text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                      />
                     </div>
                   )}
 
-                  <div className="pt-4 border-t border-white/5">
-                    <button 
-                      onClick={() => {
-                        setCanvasElements(els => els.filter(el => el.id !== activeElementId));
-                        setActiveElementId(null);
-                      }}
-                      className="w-full py-3 bg-red-500/10 text-red-500 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all"
-                    >
-                      Delete Element
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                  {canvasElements.find(e => e.id === activeElementId)?.type === 'line' && (
+                    <div className="space-y-6">
+                      <div className="space-y-3">
+                        <span className="text-[9px] text-slate-500 block font-black uppercase tracking-widest">Line Width</span>
+                        <input 
+                          type="range" min="10" max="300" step="1"
+                          value={canvasElements.find(e => e.id === activeElementId)?.width || 100}
+                          onChange={(e) => setCanvasElements(els => els.map(el => el.id === activeElementId ? { ...el, width: parseInt(e.target.value) } : el))}
+                          className="w-full accent-indigo-500 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <span className="text-[9px] text-slate-500 block font-black uppercase tracking-widest">Thickness</span>
+                        <input 
+                          type="range" min="1" max="50" step="1"
+                          value={canvasElements.find(e => e.id === activeElementId)?.height || 4}
+                          onChange={(e) => setCanvasElements(els => els.map(el => el.id === activeElementId ? { ...el, height: parseInt(e.target.value) } : el))}
+                          className="w-full accent-indigo-500 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <span className="text-[9px] text-slate-500 block font-black uppercase tracking-widest">Line Color</span>
+                        <div className="flex gap-2 flex-wrap">
+                          {['#ffffff', '#000000', '#ff0000', '#00ff00', '#2563eb', '#fbbf24', '#e11d48'].map(c => (
+                            <button 
+                              key={c}
+                              onClick={() => setCanvasElements(els => els.map(el => el.id === activeElementId ? { ...el, color: c } : el))}
+                              className={`w-6 h-6 rounded-full border-2 transition-all ${canvasElements.find(e => e.id === activeElementId)?.color === c ? 'border-white scale-110' : 'border-transparent opacity-60'}`}
+                              style={{ backgroundColor: c }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <button 
+                    onClick={() => setActiveElementId(null)}
+                    className="w-full py-4 bg-white/5 text-slate-400 rounded-xl text-[9px] font-black uppercase tracking-widest hover:text-white transition-all"
+                  >
+                    Close Element Edit
+                  </button>
+               </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       </div>
     </div>

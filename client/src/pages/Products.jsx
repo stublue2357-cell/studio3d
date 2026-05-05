@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { getProducts } from '../api'; 
 import { useCart } from '../context/CartContext.jsx';
+import GlitchText from '../assets/components/GlitchText';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -35,23 +36,23 @@ const Products = () => {
       <div className="max-w-[1600px] mx-auto">
         
         {/* --- PAGE HEADER --- */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-16 flex flex-col md:flex-row justify-between items-end gap-6">
-          <div>
-            <h1 className="text-5xl md:text-7xl font-black italic uppercase tracking-tighter text-white">
-              The <span className="text-indigo-400 drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]">Archive</span>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-12 md:mb-16 flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
+          <div className="w-full">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-black italic uppercase tracking-tighter text-white">
+              The <GlitchText text="Archive" className="text-indigo-400 drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
             </h1>
-            <div className="flex gap-4 mt-6">
+            <div className="flex gap-2 md:gap-4 mt-6 overflow-x-auto pb-4 md:pb-0 scrollbar-hide no-scrollbar">
               {['All', 'Designer', 'Plain'].map(cat => (
                 <button 
                   key={cat} onClick={() => setActiveCategory(cat)}
-                  className={`text-[10px] font-black uppercase tracking-widest px-6 py-2 rounded-full border transition-all ${activeCategory === cat ? 'bg-indigo-500 text-white border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.4)]' : 'text-slate-500 border-white/5 hover:text-white'}`}
+                  className={`whitespace-nowrap text-[8px] md:text-[10px] font-black uppercase tracking-widest px-4 md:px-6 py-2 rounded-full border transition-all ${activeCategory === cat ? 'bg-indigo-500 text-white border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.4)]' : 'text-slate-500 border-white/5 hover:text-white'}`}
                 >
                   {cat}
                 </button>
               ))}
             </div>
           </div>
-          <div className="text-[10px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-6 py-3 rounded-full border border-indigo-500/20">
+          <div className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-6 py-3 rounded-full border border-indigo-500/20 whitespace-nowrap">
             Live Database Connected
           </div>
         </motion.div>

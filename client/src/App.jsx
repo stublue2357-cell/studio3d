@@ -10,6 +10,7 @@ import CustomCursor from './assets/components/CustomCursor.jsx';
 import CartDrawer from './assets/components/CartDrawer.jsx';
 import ProtectedRoute from './assets/components/ProtectedRoute.jsx'; 
 import AIChatbot from './assets/components/AIChatbot.jsx';
+import CyberBackground from './assets/components/CyberBackground.jsx';
 
 // --- PAGES ---
 import Home from './pages/Home.jsx';
@@ -22,6 +23,7 @@ import OrderSuccess from './pages/OrderSuccess.jsx';
 import About from './pages/About.jsx';
 import Contact from './pages/Contact.jsx';
 import Cart from './pages/Cart.jsx';
+import ResetPassword from './pages/ResetPassword.jsx';
 
 // --- ADMIN PAGES ---
 import AdminDashboard from './pages/AdminDashboard.jsx';
@@ -51,8 +53,9 @@ function AppContent() {
   const location = useLocation();
 
   return (
-    <div className="relative min-h-screen bg-[#010413] text-white flex flex-col font-['Plus_Jakarta_Sans']">
+    <div className="relative min-h-screen text-white bg-transparent font-['Plus_Jakarta_Sans'] select-none">
       
+      <CyberBackground />
       <CustomCursor />
       <Navbar />
       <CartDrawer />
@@ -73,6 +76,7 @@ function AppContent() {
             <Route path="/contact" element={<PageWrapper><Contact /></PageWrapper>} />
             <Route path="/login" element={<PageWrapper><Login /></PageWrapper>} />
             <Route path="/cart" element={<PageWrapper><Cart /></PageWrapper>} />
+            <Route path="/reset-password/:token" element={<PageWrapper><ResetPassword /></PageWrapper>} />
             
             {/* ADMIN ALIASES (For ease of use during demo) */}
             <Route path="/admin-login" element={<PageWrapper><Login /></PageWrapper>} />

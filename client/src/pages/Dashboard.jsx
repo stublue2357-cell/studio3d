@@ -103,17 +103,17 @@ const Dashboard = () => {
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[150px] rounded-full" />
       </div>
 
-      <aside className="w-full lg:w-[280px] shrink-0 glass-panel rounded-[2.5rem] p-8 bg-black/40 backdrop-blur-3xl border-white/5 h-fit sticky top-32 z-10">
-        <h2 className="text-3xl font-black italic uppercase mb-10 text-white leading-none">User <span className="text-blue-500">Node</span></h2>
-        <div className="space-y-8">
+      <aside className="w-full lg:w-[280px] shrink-0 glass-panel rounded-3xl md:rounded-[2.5rem] p-6 md:p-8 bg-black/40 backdrop-blur-3xl border-white/5 h-fit lg:sticky top-24 md:top-32 z-20">
+        <h2 className="text-2xl md:text-3xl font-black italic uppercase mb-6 md:mb-10 text-white leading-none">User <span className="text-blue-500">Node</span></h2>
+        <div className="flex lg:flex-col gap-8 md:gap-10 overflow-x-auto lg:overflow-visible pb-4 lg:pb-0 scrollbar-hide no-scrollbar">
           {['Creation', 'Account'].map((section) => (
-            <div key={section}>
-              <h4 className="text-[9px] font-black text-slate-600 uppercase tracking-[0.5em] mb-4 pl-2">{section}</h4>
-              <nav className="flex flex-col gap-2">
+            <div key={section} className="shrink-0 lg:shrink">
+              <h4 className="text-[8px] md:text-[9px] font-black text-slate-600 uppercase tracking-[0.4em] md:tracking-[0.5em] mb-4 pl-2">{section}</h4>
+              <nav className="flex lg:flex-col gap-2">
                 {sidebarTabs.filter(t => t.section === section).map(tab => (
                   <button 
                     key={tab.id} onClick={() => setActiveTab(tab.id)}
-                    className={`text-left px-6 py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-blue-600/10 text-blue-400 border border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.1)]' : 'text-slate-500 hover:text-white border border-transparent'}`}
+                    className={`whitespace-nowrap text-left px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl text-[8px] md:text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-blue-600/10 text-blue-400 border border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.1)]' : 'text-slate-500 hover:text-white border border-transparent'}`}
                   >
                     {tab.label}
                   </button>
@@ -124,14 +124,14 @@ const Dashboard = () => {
         </div>
       </aside>
 
-      <main className="flex-1 w-full bg-black/40 rounded-[3.5rem] border border-white/5 p-8 md:p-12 min-h-[75vh] backdrop-blur-md relative z-10 shadow-2xl">
+      <main className={`flex-1 w-full bg-black/40 rounded-[3.5rem] border border-white/5 min-h-[75vh] backdrop-blur-md relative z-10 shadow-2xl overflow-hidden transition-all duration-500 ${activeTab === 'lab' ? 'p-0' : 'p-8 md:p-12'}`}>
         <AnimatePresence mode="wait">
-          <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+          <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="h-full">
             {activeTab === 'lab' && <DesignLab />}
-            {activeTab === 'collection' && <Products isDashboard={true} />}
-            {activeTab === 'orders' && <OrderHistory orders={orders} loading={loading} onOpenInvoice={openInvoice} />}
-            {activeTab === 'profile' && <ProfileSettings />}
-            {activeTab === 'billing' && <BillingSettings />}
+            {activeTab === 'collection' && <div className="p-8"><Products isDashboard={true} /></div>}
+            {activeTab === 'orders' && <div className="p-8"><OrderHistory orders={orders} loading={loading} onOpenInvoice={openInvoice} /></div>}
+            {activeTab === 'profile' && <div className="p-8"><ProfileSettings /></div>}
+            {activeTab === 'billing' && <div className="p-8"><BillingSettings /></div>}
           </motion.div>
         </AnimatePresence>
       </main>
@@ -167,6 +167,28 @@ const Dashboard = () => {
                     <span className="text-slate-500 text-[9px]">Qty: {item.quantity}</span>
                   </div>
                 ))}
+              </div>
+
+              {/* Message Exchange Log */}
+              <div className="space-y-4 mb-8">
+                {selectedOrder.customerNote && (
+                  <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/10">
+                    <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest mb-1">Your Submission Note</p>
+                    <p className="text-[10px] text-slate-300 italic font-medium leading-relaxed">"{selectedOrder.customerNote}"</p>
+                  </div>
+                )}
+
+                {selectedOrder.adminFeedback && (
+                  <div className="p-4 rounded-xl bg-blue-600/10 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
+                    <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-1 flex items-center gap-2">
+                      <span className="w-1 h-1 bg-blue-500 rounded-full animate-pulse" />
+                      Admin Feed / Reply
+                    </p>
+                    <p className="text-[10px] text-white font-bold tracking-wide leading-relaxed">
+                      {selectedOrder.adminFeedback}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <button onClick={() => window.print()} className="w-full py-5 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.4em] hover:bg-blue-600 hover:text-white transition-all">

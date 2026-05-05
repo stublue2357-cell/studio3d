@@ -210,11 +210,58 @@ const DesignEditor = ({ onExport, activePanel }) => {
     fabricCanvas.setActiveObject(text);
   };
 
+  const addLine = () => {
+    if (!fabricCanvas) return;
+    const line = new fabric.Rect({
+      id: `layer_${Date.now()}`,
+      left: 100,
+      top: 150,
+      width: 150,
+      height: 5,
+      fill: textColor,
+      rx: 2,
+      ry: 2,
+      strokeWidth: 0
+    });
+    fabricCanvas.add(line);
+    fabricCanvas.setActiveObject(line);
+  };
+
+  const addCircle = () => {
+    if (!fabricCanvas) return;
+    const circle = new fabric.Circle({
+      id: `layer_${Date.now()}`,
+      left: 150,
+      top: 150,
+      radius: 50,
+      fill: textColor,
+      strokeWidth: 0
+    });
+    fabricCanvas.add(circle);
+    fabricCanvas.setActiveObject(circle);
+  };
+
+  const addTriangle = () => {
+    if (!fabricCanvas) return;
+    const triangle = new fabric.Triangle({
+      id: `layer_${Date.now()}`,
+      left: 150,
+      top: 150,
+      width: 100,
+      height: 100,
+      fill: textColor,
+      strokeWidth: 0
+    });
+    fabricCanvas.add(triangle);
+    fabricCanvas.setActiveObject(triangle);
+  };
+
   const handleTextColorChange = (color) => {
     setTextColor(color);
     if (fabricCanvas) {
       const activeObject = fabricCanvas.getActiveObject();
-      if (activeObject && (activeObject.type === 'text' || activeObject.type === 'i-text' || activeObject.type === 'IText')) {
+      const shapeTypes = ['text', 'i-text', 'IText', 'rect', 'circle', 'triangle'];
+      if (activeObject && shapeTypes.includes(activeObject.type)) {
         activeObject.set('fill', color);
         fabricCanvas.renderAll();
         // Trigger export
@@ -407,9 +454,73 @@ const DesignEditor = ({ onExport, activePanel }) => {
           <h3 className="text-white font-bold tracking-wider mb-4">Upload Media</h3>
           <label className="cursor-pointer block px-4 py-4 bg-fuchsia-600 hover:bg-fuchsia-500 rounded-xl text-xs font-black uppercase tracking-widest text-white transition-all text-center w-full shadow-[0_0_15px_rgba(192,38,211,0.3)]">
             Upload Image
-            <input type="file" className="hidden" onChange={handleImageUpload} accept="image/*" />
           </label>
         </div>
+      )}
+
+      {activePanel === 'shapes' && (
+        <>
+          <div className="space-y-8">
+            <h3 className="text-white font-bold tracking-wider mb-4">Geometric Elements</h3>
+            <div className="grid grid-cols-1 gap-3">
+              <button 
+                onClick={addLine}
+                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-[9px] font-black uppercase tracking-widest text-white transition-all shadow-lg flex items-center justify-center gap-3"
+              >
+                <span className="text-lg">━</span> Construct Line
+              </button>
+              <button 
+                onClick={addCircle}
+                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-[9px] font-black uppercase tracking-widest text-white transition-all shadow-lg flex items-center justify-center gap-3"
+              >
+                <span className="text-lg">●</span> Construct Circle
+              </button>
+              <button 
+                onClick={addTriangle}
+                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-[9px] font-black uppercase tracking-widest text-white transition-all shadow-lg flex items-center justify-center gap-3"
+              >
+                <span className="text-lg">▲</span> Construct Triangle
+              </button>
+            </div>
+          </div>
+          
+          <div className="space-y-3 mt-8">
+            <label className="text-[9px] font-black uppercase tracking-[0.3em] text-cyan-400 flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
+              Shape Properties
+            </label>
+            <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <span className="text-[8px] text-slate-500 uppercase font-bold tracking-wider">Dimension / Thickness</span>
+                <input 
+                  type="range" min="1" max="150" step="1"
+                  defaultValue="50"
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    const activeObject = fabricCanvas?.getActiveObject();
+                    if (!activeObject) return;
+
+                    if (activeObject.type === 'rect') {
+                      activeObject.set('height', val);
+                    } else if (activeObject.type === 'circle') {
+                      activeObject.set('radius', val);
+                    } else if (activeObject.type === 'triangle') {
+                      activeObject.set({ width: val * 2, height: val * 2 });
+                    }
+                    
+                    fabricCanvas.renderAll();
+                    onExport(fabricCanvas.toDataURL({ format: 'png', quality: 1 }));
+                  }}
+                  className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed mt-4">
+            Note: Use the "Colors" panel to change the line color while the line is selected.
+          </p>
+        </>
       )}
 
       {activePanel === 'layers' && (
@@ -430,9 +541,16 @@ const DesignEditor = ({ onExport, activePanel }) => {
                   onClick={() => selectLayer(layer.objRef)}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-lg">{layer.type === 'image' ? '🖼️' : 'T'}</span>
+                    <span className="text-lg">
+                      {layer.type === 'image' ? '🖼️' : 
+                       layer.type === 'rect' ? '━' : 
+                       layer.type === 'circle' ? '●' :
+                       layer.type === 'triangle' ? '▲' : 'T'}
+                    </span>
                     <span className="text-[10px] font-black uppercase text-white truncate max-w-[120px]">
-                      {layer.text}
+                      {layer.type === 'rect' ? 'Geometry Line' : 
+                       layer.type === 'circle' ? 'Geometry Circle' :
+                       layer.type === 'triangle' ? 'Geometry Triangle' : layer.text}
                     </span>
                   </div>
                   <button 
@@ -449,7 +567,7 @@ const DesignEditor = ({ onExport, activePanel }) => {
       )}
 
       {/* Force Sync button visible only on tools */}
-      {['text', 'uploads', 'colors', 'layers'].includes(activePanel) && (
+      {['text', 'uploads', 'colors', 'layers', 'shapes'].includes(activePanel) && (
         <div className="pt-8 mt-4 border-t border-white/5">
           <button onClick={exportDesign} className="w-full py-4 rounded-xl bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-[0.3em] hover:bg-white/10 transition-all shadow-xl">
             Force Render Sync
@@ -459,7 +577,7 @@ const DesignEditor = ({ onExport, activePanel }) => {
 
       {/* PORTAL RENDER: This renders the canvas directly over the 3D Viewer in AIStudio */}
       {portalTarget && createPortal(
-        <div className={`relative w-[300px] h-[400px] mt-[-40px] transition-all ${['text', 'uploads', 'layers'].includes(activePanel) ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+        <div className={`relative w-[300px] h-[400px] mt-[-40px] transition-all ${['text', 'uploads', 'layers', 'shapes'].includes(activePanel) ? 'pointer-events-auto' : 'pointer-events-none'}`}>
           <canvas ref={canvasRef} className="max-w-full h-auto" />
         </div>,
         portalTarget

@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import { getProducts } from '../api';
+import GlitchText from '../assets/components/GlitchText';
 
 const Home = () => {
   const [latestProducts, setLatestProducts] = useState([]);
@@ -24,37 +25,37 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="relative min-h-screen text-white bg-transparent font-['Plus_Jakarta_Sans']">
+    <div className="relative min-h-screen text-white bg-transparent font-['Plus_Jakarta_Sans'] select-none">
       
       {/* --- 1. SUPER HERO SECTION (Increased Height) --- */}
-      <section className="relative min-h-[110vh] flex flex-col items-center justify-center text-center px-10 overflow-hidden">
+      <section className="relative min-h-[90vh] md:min-h-[110vh] flex flex-col items-center justify-center text-center px-6 md:px-10 overflow-hidden">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 1.2 }}
-          className="relative z-10"
+          className="relative z-10 w-full"
         >
-          <span className="text-cyan-400 text-[11px] font-bold tracking-[0.8em] uppercase mb-12 block animate-pulse">
+          <span className="text-cyan-400 text-[9px] md:text-[11px] font-bold tracking-[0.6em] md:tracking-[0.8em] uppercase mb-8 md:mb-12 block animate-pulse">
             Neural Fashion Intelligence // v1.0
           </span>
           
-          <h1 className="text-8xl md:text-[12rem] font-black tracking-tighter leading-[0.75] mb-14 text-white">
-            LIMITLESS <br /> 
+          <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-[12rem] font-black tracking-tighter leading-[0.85] md:leading-[0.75] mb-8 md:mb-14 text-white">
+            <GlitchText text="LIMITLESS" /> <br /> 
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-cyan-400 to-indigo-800 italic">
               IDENTITY.
             </span>
           </h1>
 
-          <p className="max-w-3xl mx-auto text-slate-400 text-base md:text-lg leading-relaxed mb-20 tracking-wide font-medium opacity-80">
+          <p className="max-w-3xl mx-auto text-slate-400 text-sm md:text-base lg:text-lg leading-relaxed mb-12 md:mb-20 tracking-wide font-medium opacity-80 px-4 md:px-0">
             Studio3D is rewriting the laws of apparel. We don't just make clothes; we synthesize high-fidelity neural patterns with liquid-silk technology to define the next era of human expression.
           </p>
 
-          <div className="flex flex-col md:flex-row gap-8 justify-center items-center">
-            <Link to="/dashboard" className="bg-indigo-600 hover:bg-cyan-500 px-16 py-7 rounded-2xl text-[11px] font-extrabold uppercase tracking-[0.4em] shadow-2xl shadow-indigo-500/20 transition-all duration-500">
+          <div className="flex flex-col sm:flex-row gap-4 md:gap-8 justify-center items-center px-6 md:px-0">
+            <Link to="/studio" className="w-full sm:w-auto bg-indigo-600 hover:bg-cyan-500 px-8 md:px-16 py-5 md:py-7 rounded-2xl text-[10px] md:text-[11px] font-extrabold uppercase tracking-[0.3em] md:tracking-[0.4em] shadow-2xl shadow-indigo-500/20 transition-all duration-500">
               Launch AI Studio
             </Link>
-            <Link to="/products" className="glass-panel border border-white/10 px-16 py-7 rounded-2xl text-[11px] font-extrabold uppercase tracking-[0.4em] hover:bg-white/10 transition-all duration-500">
+            <Link to="/products" className="w-full sm:w-auto glass-panel border border-white/10 px-8 md:px-16 py-5 md:py-7 rounded-2xl text-[10px] md:text-[11px] font-extrabold uppercase tracking-[0.3em] md:tracking-[0.4em] hover:bg-white/10 transition-all duration-500">
               Explore Archive
             </Link>
           </div>
@@ -71,15 +72,15 @@ const Home = () => {
       </section>
 
       {/* --- 2. THE VISION (New Paragraph Section) --- */}
-      <section className="py-52 px-10 relative z-10 border-y border-white/5 bg-black/10">
+      <section className="py-24 md:py-52 px-6 md:px-10 relative z-10 border-y border-white/5 bg-black/10">
         <div className="max-w-5xl mx-auto text-center">
           <motion.h2 
             initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
-            className="text-4xl md:text-6xl font-bold tracking-tighter mb-12"
+            className="text-3xl md:text-6xl font-bold tracking-tighter mb-8 md:mb-12"
           >
             A New Reality in <span className="italic text-cyan-500">Every Thread.</span>
           </motion.h2>
-          <p className="text-xl md:text-2xl text-slate-500 leading-relaxed font-light">
+          <p className="text-lg md:text-2xl text-slate-500 leading-relaxed font-light px-4 md:px-0">
             Our generative algorithms analyze aesthetic frequencies to produce patterns that resonate with your digital aura. Every garment is a unique piece of code, rendered in the physical world.
           </p>
         </div>
@@ -125,21 +126,21 @@ const Home = () => {
       </section>
 
       {/* --- 4. BRAND VALUES (New Visual Grid) --- */}
-      <section className="py-52 px-10 bg-white/5 backdrop-blur-3xl relative z-10 overflow-hidden">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-32 items-center">
-          <div>
-            <h3 className="text-[12px] font-black tracking-[0.6em] text-cyan-500 uppercase mb-8 italic">The Technology</h3>
-            <h2 className="text-6xl font-bold tracking-tighter mb-10 leading-[0.9]">Atomic Precision. <br />Digital Soul.</h2>
-            <p className="text-lg text-slate-400 leading-relaxed mb-12">
+      <section className="py-24 md:py-52 px-6 md:px-10 bg-white/5 backdrop-blur-3xl relative z-10 overflow-hidden">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-32 items-center">
+          <div className="order-2 md:order-1">
+            <h3 className="text-[10px] md:text-[12px] font-black tracking-[0.4em] md:tracking-[0.6em] text-cyan-500 uppercase mb-6 md:mb-8 italic">The Technology</h3>
+            <h2 className="text-4xl md:text-6xl font-bold tracking-tighter mb-8 md:mb-10 leading-[1] md:leading-[0.9]">Atomic Precision. <br />Digital Soul.</h2>
+            <p className="text-base md:text-lg text-slate-400 leading-relaxed mb-8 md:mb-12">
               Our 3D knitting technology allows us to create seamless garments that fit perfectly while minimizing fabric waste. We use recycled ocean plastics infused with neural-conductive silk.
             </p>
-            <ul className="space-y-6 text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">
+            <ul className="space-y-4 md:space-y-6 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.2em] md:tracking-[0.3em] text-slate-500">
               <li className="flex items-center gap-4"><span className="w-2 h-2 bg-cyan-500 rounded-full" /> Nano-Fiber Durability</li>
               <li className="flex items-center gap-4"><span className="w-2 h-2 bg-indigo-500 rounded-full" /> Generative Pattern Logic</li>
               <li className="flex items-center gap-4"><span className="w-2 h-2 bg-white rounded-full" /> Carbon-Negative Production</li>
             </ul>
           </div>
-          <div className="glass-panel aspect-square rounded-[5rem] overflow-hidden rotate-3 hover:rotate-0 transition-all duration-700">
+          <div className="order-1 md:order-2 glass-panel aspect-square rounded-[3rem] md:rounded-[5rem] overflow-hidden rotate-2 md:rotate-3 hover:rotate-0 transition-all duration-700">
              <img src="https://images.unsplash.com/photo-1558913926-276949021e86?w=1000" className="w-full h-full object-cover opacity-50" />
           </div>
         </div>
@@ -168,7 +169,7 @@ const Home = () => {
             <h5 className="text-[10px] font-bold tracking-widest uppercase text-white">Navigation</h5>
             <div className="flex flex-col gap-4 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
               <Link to="/products" className="hover:text-cyan-400">Store</Link>
-              <Link to="/dashboard" className="hover:text-cyan-400">Studio</Link>
+              <Link to="/dashboard" className="hover:text-studio">Studio</Link>
               <Link to="/login" className="hover:text-cyan-400">Account</Link>
             </div>
           </div>

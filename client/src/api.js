@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Backend server ka base rasta (Localhost)
 // Backend server ka base rasta (Dynamic for Deployment)
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://studio3d-production.up.railway.app/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 const API = axios.create({ baseURL: API_BASE_URL });
 
 // ==========================================
@@ -10,6 +10,9 @@ const API = axios.create({ baseURL: API_BASE_URL });
 // ==========================================
 export const loginUser = (formData) => API.post('/auth/login', formData);
 export const registerUser = (formData) => API.post('/auth/register', formData);
+export const forgotPassword = (email) => API.post('/auth/forgot-password', { email });
+export const resetPassword = (token, password) => API.post(`/auth/reset-password/${token}`, { password });
+export const googleLogin = (idToken) => API.post('/auth/google-login', { idToken });
 
 // ==========================================
 // 📦 PRODUCT INVENTORY APIS
@@ -66,7 +69,7 @@ export const getAllOrdersAdmin = (token) => API.get('/orders/admin/all', {
 });
 
 // 4. Order status update karna (Pending to Delivered)
-export const updateOrderStatus = (id, status, token) => API.patch(`/orders/status/${id}`, { status }, {
+export const updateOrderStatus = (id, payload, token) => API.patch(`/orders/status/${id}`, payload, {
   headers: { 'x-auth-token': token }
 });
 

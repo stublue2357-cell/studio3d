@@ -22,10 +22,14 @@ const AdminOrders = ({ isEmbedded }) => {
     finally { setLoading(false); }
   };
 
-  const handleStatusChange = async (id, newStatus) => {
+  const handleStatusChange = async (id, newStatus, newPrice = null, feedback = null) => {
     try {
       const token = localStorage.getItem('token');
-      await updateOrderStatus(id, newStatus, token);
+      const payload = { status: newStatus };
+      if (newPrice !== null) payload.totalAmount = Number(newPrice);
+      if (feedback !== null) payload.adminFeedback = feedback;
+      
+      await updateOrderStatus(id, payload, token);
       fetchOrders();
     } catch (err) { alert("PROTOCOL_ERROR"); }
   };
@@ -101,6 +105,8 @@ const AdminOrders = ({ isEmbedded }) => {
                     value={order.status}
                   >
                     <option value="Pending">Set_Pending</option>
+                    <option value="Approved">Set_Approved</option>
+                    <option value="Rejected">Set_Rejected</option>
                     <option value="Shipped">Set_Shipped</option>
                     <option value="Delivered">Set_Delivered</option>
                   </select>
@@ -144,9 +150,30 @@ const AdminOrders = ({ isEmbedded }) => {
                   <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">Status_Node</h4>
                   <div className="text-indigo-400 text-sm font-black italic tracking-widest uppercase">{selectedOrder.status}</div>
                   <div className="text-slate-500 text-[9px] uppercase font-bold tracking-widest">Method: {selectedOrder.paymentMethod}</div>
-                  <div className="text-white text-2xl font-black italic mt-4">${selectedOrder.totalAmount}.00</div>
+                  <div className="flex items-center justify-end gap-3 mt-4">
+                     <span className="text-slate-500 text-[9px] uppercase font-black">Price:</span>
+                     <input 
+                        type="number" 
+                        defaultValue={selectedOrder.totalAmount}
+                        onBlur={(e) => handleStatusChange(selectedOrder._id, selectedOrder.status, e.target.value)}
+                        className="bg-white/5 border border-white/10 text-white text-xl font-black italic w-24 text-right px-2 rounded-lg outline-none focus:border-indigo-500"
+                     />
+                     <span className="text-white text-xl font-black italic">.00</span>
+                  </div>
                 </div>
               </div>
+
+              {selectedOrder.customerNote && (
+                <div className="mb-12 relative z-10 p-6 bg-amber-500/5 border border-amber-500/10 rounded-3xl">
+                   <h4 className="text-[9px] font-black text-amber-500 uppercase tracking-[0.3em] mb-3 flex items-center gap-2">
+                     <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+                     User_Intelligence / Note
+                   </h4>
+                   <p className="text-[11px] text-slate-300 font-medium italic leading-relaxed">
+                     "{selectedOrder.customerNote}"
+                   </p>
+                </div>
+              )}
 
               <div className="relative z-10">
                 <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6 border-b border-white/5 pb-2">Payload_Intel</h4>
@@ -179,6 +206,19 @@ const AdminOrders = ({ isEmbedded }) => {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              <div className="mt-12 pt-8 border-t border-white/5 relative z-10">
+                <h4 className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+                  Admin_Response_Protocol
+                </h4>
+                <textarea 
+                  defaultValue={selectedOrder.adminFeedback}
+                  onBlur={(e) => handleStatusChange(selectedOrder._id, selectedOrder.status, null, e.target.value)}
+                  placeholder="ENTER DECISION RATIONALE OR FEEDBACK FOR THE USER..."
+                  className="w-full h-24 bg-white/[0.03] border border-white/10 p-5 rounded-2xl text-[10px] text-white outline-none focus:border-indigo-500 transition-all resize-none font-medium placeholder:text-slate-700"
+                />
               </div>
 
               <button onClick={() => window.print()} className="mt-12 w-full py-5 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.5em] hover:bg-indigo-600 hover:text-white transition-all shadow-2xl">

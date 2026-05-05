@@ -10,6 +10,9 @@ const orderRoutes = require('./routes/orders');
 const aiRoutes = require('./routes/ai');
 const app = express();
 
+// --- GLOBAL SIMULATION MODE (Default: ON) ---
+global.isSimulationMode = true; 
+
 // --- MIDDLEWARE ---
 // CORS ko sab se pehle rakha hai taake frontend (5173) backend (5000) se baat kar sakay
 app.use(cors()); 
@@ -24,13 +27,29 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes); 
 app.use('/api/ai', aiRoutes);
 
-// --- MONGODB CONNECTION ---
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("DATABASE_CONNECTED // SYNCHRONIZATION_COMPLETE"))
-  .catch((err) => console.log("DATABASE_OFFLINE // ERROR:", err));
+// --- NEURAL DATABASE CONNECTION ---
+const connectDB = async () => {
+    try {
+        console.log("SYNCHRONIZING_WITH_MAIN_FRAME...");
+        // Set a shorter timeout and disable buffering so queries don't hang
+        await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/studio3d', {
+            serverSelectionTimeoutMS: 5000,
+            bufferCommands: false, // Stop waiting for the database
+            autoIndex: false 
+        });
+        global.isSimulationMode = false; // Disable bypass since DB is UP
+        console.log("\x1b[32m%s\x1b[0m", "DATABASE_CONNECTED // SYNCHRONIZATION_COMPLETE");
+    } catch (err) {
+        global.isSimulationMode = true; 
+        console.log("\x1b[31m%s\x1b[0m", "DATABASE_OFFLINE // NEURAL_MOCK_MODE_ACTIVATED");
+        console.log("REASON:", err.message); // Log the actual error
+        console.log("TIP: The project is now running in 'Simulation Mode'. Data will not persist after restart.");
+    }
+};
+connectDB();
 
 // --- SERVER INITIALIZATION ---
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
     console.log(`
     =========================================
@@ -40,3 +59,7 @@ app.listen(PORT, () => {
     =========================================
     `);
 });
+
+// --- NEURAL KEEP-ALIVE ---
+// Force the process to stay alive in simulation mode
+setInterval(() => {}, 1000 * 60 * 60);

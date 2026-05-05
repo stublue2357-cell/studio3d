@@ -78,4 +78,56 @@ router.post('/generate', authMiddleware, async (req, res) => {
     }
 });
 
+// --- 2. AI DESIGN SUGGESTIONS (Textual advice) ---
+router.post('/suggest', authMiddleware, async (req, res) => {
+    try {
+        const { prompt } = req.body;
+        
+        if (!prompt) return res.status(400).json({ msg: "PROMPT_REQUIRED" });
+
+        console.log("AI_SUGGESTION_REQUESTED:", prompt);
+
+        // --- INTELLIGENT SUGGESTION LOGIC ---
+        const designKeywords = {
+            cyberpunk: ["neon accents", "glitch effects", "techwear patterns", "cyan/magenta glow"],
+            minimalist: ["fine line work", "monochrome palette", "large whitespace", "geometric focus"],
+            vintage: ["distressed textures", "retro typography", "faded earth tones", "halftone patterns"],
+            streetwear: ["bold branding", "asymmetrical layouts", "graffiti elements", "high contrast"]
+        };
+
+        let context = "general aesthetic";
+        for (const key in designKeywords) {
+            if (prompt.toLowerCase().includes(key)) {
+                context = key;
+                break;
+            }
+        }
+
+        const baseSuggestions = [
+            "Consider centering your primary graphic to establish a strong focal point.",
+            "Try adding a subtle outer glow to your text for a 'holographic' effect.",
+            "Using a vertical line arrangement on the sleeves can elongate the silhouette.",
+            "A small geometric logo on the pocket area adds a professional 'brand' feel.",
+            "Mix different line weights (thick and thin) to create a sense of technical depth."
+        ];
+
+        const contextSuggestions = designKeywords[context] || [];
+        const finalSuggestions = [...contextSuggestions, ...baseSuggestions];
+        
+        // Pick 2-3 random suggestions
+        const selected = finalSuggestions.sort(() => 0.5 - Math.random()).slice(0, 3);
+        
+        const suggestionText = `ANALYSIS COMPLETE: For a ${context} look, I suggest: \n\n` + 
+                               selected.map(s => `• ${s}`).join('\n');
+
+        // Simulate AI thinking delay
+        await new Promise(r => setTimeout(r, 1500));
+
+        res.json({ suggestion: suggestionText });
+    } catch (err) {
+        console.error("AI_SUGGESTION_ERROR:", err.message);
+        res.status(500).json({ message: "Neural suggestion engine offline." });
+    }
+});
+
 module.exports = router;

@@ -15,12 +15,15 @@ import { Decal, useGLTF, useTexture } from '@react-three/drei';
  * 3. maath: Used for smooth mathematical transitions (easing).
  */
 const Shirt = ({ baseType, aiTexture, overlayTexture }) => {
-  const [modelPath, setModelPath] = React.useState('/public/shirt_baked.glb');
+  const [modelPath, setModelPath] = React.useState('shirt_baked.glb');
 
   // Check if the custom .glb file exists for this specific baseType
   React.useEffect(() => {
     if (!baseType) return;
-    const desiredFile = '/' + baseType.toLowerCase().replace(/[\s-]/g, '_') + '.glb';
+    
+    // Use relative path without leading slash for hosting flexibility
+    const fileName = baseType.toLowerCase().replace(/[\s-]/g, '_') + '.glb';
+    const desiredFile = fileName; 
     
     fetch(desiredFile, { method: 'HEAD' })
       .then(res => {
@@ -29,10 +32,10 @@ const Shirt = ({ baseType, aiTexture, overlayTexture }) => {
         if (res.ok && contentType && !contentType.includes('text/html')) {
           setModelPath(desiredFile);
         } else {
-          setModelPath('/shirt_baked.glb'); // Fallback to default
+          setModelPath('shirt_baked.glb'); // Fallback to default
         }
       })
-      .catch(() => setModelPath('/shirt_baked.glb'));
+      .catch(() => setModelPath('shirt_baked.glb'));
   }, [baseType]);
 
   const { scene } = useGLTF(modelPath);

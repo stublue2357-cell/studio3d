@@ -27,7 +27,7 @@ const DesignLab = () => {
   const canvasRef = useRef(null);
   const modelViewerRef = useRef(null);
 
-  const [modelPath, setModelPath] = useState("https://modelviewer.dev/shared-assets/models/Astronaut.glb");
+  const [modelPath, setModelPath] = useState("shirt_baked.glb");
 
   useEffect(() => {
     const fileName = apparel.toLowerCase().replace(/[\s-]/g, '_') + '.glb';
@@ -39,16 +39,16 @@ const DesignLab = () => {
         } else {
           // Fallback to default external models if local file not found
           const defaults = {
-            't-shirt': "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
-            'full-arm': "https://modelviewer.dev/shared-assets/models/RobotExpressive.glb",
-            'hoodie': "https://modelviewer.dev/shared-assets/models/RobotExpressive.glb",
-            'sweatshirt': "https://modelviewer.dev/shared-assets/models/Horse.glb"
+            't-shirt': "shirt_baked.glb",
+            'full-arm': "shirt_baked.glb",
+            'hoodie': "shirt_baked.glb",
+            'sweatshirt': "shirt_baked.glb"
           };
           setModelPath(baseProduct?.modelUrl || defaults[apparel] || defaults['t-shirt']);
         }
       })
       .catch(() => {
-        setModelPath(baseProduct?.modelUrl || "https://modelviewer.dev/shared-assets/models/Astronaut.glb");
+        setModelPath(baseProduct?.modelUrl || "shirt_baked.glb");
       });
   }, [apparel, baseProduct]);
 
@@ -176,11 +176,12 @@ const DesignLab = () => {
       {/* SIDEBAR - Fixed Left */}
       <div className="fixed bottom-0 left-0 right-0 h-20 md:h-auto md:w-20 bg-[#020204] border-t md:border-t-0 md:border-r border-white/5 flex flex-row md:flex-col items-center justify-around md:justify-start md:pt-[40px] md:pb-4 gap-2 z-[90] shrink-0 md:top-0 md:bottom-0">
          {[
-           { id: 'text', icon: 'T', label: 'Text', font: 'serif' },
-           { id: 'shapes', icon: '━', label: 'Lines' },
-           { id: 'uploads', icon: '☁️', label: 'Upload' },
-           { id: 'layers', icon: '☰', label: 'Layers' },
-           { id: 'colors', icon: '🎨', label: 'Colors' }
+            { id: 'vault', icon: '💎', label: 'Vault' },
+            { id: 'text', icon: 'T', label: 'Text', font: 'serif' },
+            { id: 'shapes', icon: '━', label: 'Lines' },
+            { id: 'uploads', icon: '☁️', label: 'Upload' },
+            { id: 'layers', icon: '☰', label: 'Layers' },
+            { id: 'colors', icon: '🎨', label: 'Colors' }
          ].map(item => (
            <button 
              key={item.id}
@@ -204,6 +205,28 @@ const DesignLab = () => {
             className="fixed inset-x-0 bottom-20 md:bottom-0 md:relative md:inset-auto md:w-[320px] bg-[#050508] border-t md:border-t-0 md:border-r border-white/5 z-[85] shadow-[20px_0_30px_rgba(0,0,0,0.5)] shrink-0 flex flex-col max-h-[60vh] md:max-h-none overflow-y-auto"
           >
              <div className="p-6 w-full md:w-[320px] space-y-8 flex-grow">
+                {/* Vault Panel */}
+                {activeSidebarPanel === 'vault' && (
+                  <div className="space-y-6">
+                    <h3 className="text-white font-bold tracking-wider mb-4 uppercase text-[10px]">Cloth Sample Vault</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {[
+                        { name: 'T-Shirt', icon: '👕', type: 't-shirt' },
+                        { name: 'Hoodie', icon: '🧥', type: 'hoodie' },
+                        { name: 'Sweatshirt', icon: '🧶', type: 'sweatshirt' }
+                      ].map(item => (
+                        <button 
+                          key={item.type}
+                          onClick={() => setApparel(item.type)}
+                          className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${apparel === item.type ? 'bg-indigo-500/20 border-indigo-500 text-white' : 'bg-white/5 border-white/5 text-slate-400 hover:border-white/20'}`}
+                        >
+                          <span className="text-2xl mb-2">{item.icon}</span>
+                          <span className="text-[8px] font-black uppercase tracking-widest">{item.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {/* Text Panel */}
                 {activeSidebarPanel === 'text' && (
                   <div className="space-y-4">

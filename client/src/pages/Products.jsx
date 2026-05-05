@@ -39,7 +39,7 @@ const Products = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-12 md:mb-16 flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
           <div className="w-full">
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-black italic uppercase tracking-tighter text-white">
-              The <GlitchText text="Archive" className="text-indigo-400 drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+              Cloth Sample <GlitchText text="Vault" className="text-indigo-400 drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
             </h1>
             <div className="flex gap-2 md:gap-4 mt-6 overflow-x-auto pb-4 md:pb-0 scrollbar-hide no-scrollbar">
               {['All', 'Designer', 'Plain'].map(cat => (

@@ -46,19 +46,27 @@ router.get('/', async (req, res) => {
     const fallbackProducts = [
       {
         _id: "local_p1",
-        name: "Plain Essential T-Shirt (Offline)",
-        price: 29,
-        description: "High-quality heavy cotton plain tee. [OFFLINE_MODE]",
-        category: "Plain",
+        name: "Liquid Silk Neural Tee",
+        price: 49,
+        description: "Seamless 3D-knit techwear tee with neural-adaptive fiber. [VAULT_SAMPLE]",
+        category: "Designer",
         imageUrl: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1000&auto=format&fit=crop"
       },
       {
         _id: "local_p2",
-        name: "Plain Oversized Hoodie (Offline)",
-        price: 59,
-        description: "Premium fleece-lined oversized hoodie. [OFFLINE_MODE]",
-        category: "Plain",
+        name: "Onyx Cyber Hoodie",
+        price: 89,
+        description: "Water-resistant matte finish hoodie with integrated climate control simulation. [VAULT_SAMPLE]",
+        category: "Designer",
         imageUrl: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=80&w=1000&auto=format&fit=crop"
+      },
+      {
+        _id: "local_p3",
+        name: "Carbon Utility Cargo",
+        price: 129,
+        description: "Multi-pocket utility pants designed for high-mobility urban exploration. [VAULT_SAMPLE]",
+        category: "Designer",
+        imageUrl: "https://images.unsplash.com/photo-1622260614153-03223fb72052?q=80&w=1000&auto=format&fit=crop"
       }
     ];
     res.json(fallbackProducts);

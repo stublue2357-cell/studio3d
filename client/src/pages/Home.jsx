@@ -56,7 +56,7 @@ const Home = () => {
               Launch AI Studio
             </Link>
             <Link to="/products" className="w-full sm:w-auto glass-panel border border-white/10 px-8 md:px-16 py-5 md:py-7 rounded-2xl text-[10px] md:text-[11px] font-extrabold uppercase tracking-[0.3em] md:tracking-[0.4em] hover:bg-white/10 transition-all duration-500">
-              Explore Archive
+              Enter the Vault
             </Link>
           </div>
         </motion.div>
@@ -91,10 +91,10 @@ const Home = () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-end mb-32 gap-6">
             <div>
-              <h2 className="text-6xl font-bold tracking-tighter italic">Latest <span className="text-cyan-500 font-black">Drops</span></h2>
-              <p className="text-slate-500 text-[11px] tracking-[0.5em] uppercase font-bold mt-6 opacity-60">Season 01 // Archive Collection // v2.06</p>
+              <h2 className="text-6xl font-bold tracking-tighter italic">Cloth Sample <span className="text-cyan-500 font-black">Vault</span></h2>
+              <p className="text-slate-500 text-[11px] tracking-[0.5em] uppercase font-bold mt-6 opacity-60">Season 01 // Sample Collection // v2.06</p>
             </div>
-            <Link to="/products" className="text-cyan-400 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">View All Archive -&gt;</Link>
+            <Link to="/products" className="text-cyan-400 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">Enter Vault -&gt;</Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
@@ -141,7 +141,7 @@ const Home = () => {
             </ul>
           </div>
           <div className="order-1 md:order-2 glass-panel aspect-square rounded-[3rem] md:rounded-[5rem] overflow-hidden rotate-2 md:rotate-3 hover:rotate-0 transition-all duration-700">
-             <img src="https://images.unsplash.com/photo-1558913926-276949021e86?w=1000" className="w-full h-full object-cover opacity-50" />
+             <img src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1000" className="w-full h-full object-cover opacity-80" alt="Cloth Sample" />
           </div>
         </div>
       </section>

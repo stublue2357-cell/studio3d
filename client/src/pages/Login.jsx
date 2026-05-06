@@ -17,6 +17,7 @@ const Login = () => {
   const handleAuthSuccess = (data) => {
     localStorage.setItem('token', data.token);
     localStorage.setItem('role', data.user.role);
+    localStorage.setItem('user', JSON.stringify(data.user)); // 👉 Add this line
 
     const userRole = data.user.role;
     setMsg(`ACCESS GRANTED: ${userRole.toUpperCase()} LEVEL CLEARANCE. INITIALIZING...`);

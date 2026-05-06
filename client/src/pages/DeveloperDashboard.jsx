@@ -6,7 +6,7 @@ import AdminProducts from './AdminProducts';
 import AdminOrders from './AdminOrders'; 
 import UserManagement from './UserManagement';
 import ProfileSettings from './ProfileSettings';
-import { getAllOrdersAdmin } from '../api';
+import { getAllOrdersAdmin, getAllActivity } from '../api';
 
 const DeveloperDashboard = () => {
   const navigate = useNavigate();
@@ -19,26 +19,31 @@ const DeveloperDashboard = () => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const { data } = await getAllOrdersAdmin(token);
-        setOrders(data);
+        if (!token) return navigate('/login');
+
+        const { data: orderData } = await getAllOrdersAdmin(token);
+        setOrders(Array.isArray(orderData) ? orderData : []);
+
+        const { data: activityData } = await getAllActivity(token);
+        if (activityData && Array.isArray(activityData)) {
+            const formattedLogs = activityData.map(a => 
+                `[${new Date(a.timestamp).toLocaleTimeString()}] ${a.action} // ${a.details}`
+            );
+            setLogs(formattedLogs.slice(0, 10));
+        } else {
+            setLogs([]);
+        }
       } catch (err) {
         console.error("SYNC_ERROR", err);
+        setOrders([]);
+        setLogs([]);
       } finally { setLoading(false); }
     };
+    
     fetchData();
-
-    // Simulated logs for developer aesthetic
-    const logInterval = setInterval(() => {
-      const messages = [
-        "DB_SYNC: OK", "API_REQUEST: /api/orders", "WEBSOCKET_CONNECTED", 
-        "CACHE_HIT: users_list", "SSL_VERIFIED", "WORKER_PROCESS: 7283"
-      ];
-      const newLog = `[${new Date().toLocaleTimeString()}] ${messages[Math.floor(Math.random() * messages.length)]}`;
-      setLogs(prev => [newLog, ...prev].slice(0, 5));
-    }, 3000);
-
-    return () => clearInterval(logInterval);
-  }, []);
+    const interval = setInterval(fetchData, 10000); 
+    return () => clearInterval(interval);
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -54,17 +59,17 @@ const DeveloperDashboard = () => {
   ];
 
   return (
-    <div className="relative min-h-screen pt-24 pb-12 bg-[#020617] text-slate-300 font-mono">
+    <div className="relative min-h-screen pt-24 pb-12 bg-black text-slate-300 font-mono">
       
       {/* Matrix-like Grid Background */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.03]" 
+      <div className="fixed inset-0 pointer-events-none opacity-[0.02]" 
            style={{ backgroundImage: 'linear-gradient(#4f46e5 1px, transparent 1px), linear-gradient(90deg, #4f46e5 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
       <div className="max-w-[1600px] mx-auto px-6 flex flex-col lg:flex-row gap-8 relative z-10">
         
         {/* --- DEV SIDEBAR --- */}
         <aside className="w-full lg:w-[300px] shrink-0 space-y-6">
-          <div className="glass-panel p-8 rounded-[2rem] border-indigo-500/20 bg-black/60 backdrop-blur-3xl shadow-[0_0_50px_rgba(79,70,229,0.1)]">
+          <div className="p-8 rounded-[2rem] border border-white/5 bg-[#050505] shadow-2xl">
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-2 h-2 bg-indigo-500 rounded-full animate-ping" />
@@ -82,7 +87,7 @@ const DeveloperDashboard = () => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full text-left px-6 py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-between group ${
                     activeTab === tab.id 
-                    ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' 
+                    ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' 
                     : 'hover:bg-white/5 text-slate-500 border border-transparent'
                   }`}
                 >
@@ -96,9 +101,11 @@ const DeveloperDashboard = () => {
             </nav>
 
             <div className="mt-12 pt-8 border-t border-white/5">
-              <div className="text-[9px] text-slate-600 mb-4 tracking-widest uppercase">Live Activity Logs</div>
+              <div className="text-[9px] text-slate-600 mb-4 tracking-widest uppercase font-black">Live Activity Logs</div>
               <div className="space-y-2">
-                {logs.map((log, i) => (
+                {logs.length === 0 ? (
+                  <div className="text-[8px] text-slate-700 font-mono italic uppercase">Waiting for transmission...</div>
+                ) : logs.map((log, i) => (
                   <div key={i} className="text-[8px] text-indigo-500/60 font-mono overflow-hidden whitespace-nowrap">
                     {log}
                   </div>
@@ -106,7 +113,7 @@ const DeveloperDashboard = () => {
               </div>
             </div>
 
-            <button onClick={handleLogout} className="w-full mt-8 py-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-[9px] font-black uppercase text-rose-500 hover:bg-rose-500 hover:text-white transition-all tracking-[0.3em]">
+            <button onClick={handleLogout} className="w-full mt-8 py-4 bg-rose-500/5 border border-rose-500/10 rounded-2xl text-[9px] font-black uppercase text-rose-500 hover:bg-rose-500 hover:text-white transition-all tracking-[0.3em]">
               Kill_Process
             </button>
           </div>
@@ -123,32 +130,34 @@ const DeveloperDashboard = () => {
               { label: 'Active Sockets', val: '1,204', color: 'text-blue-400' },
               { label: 'Memory', val: '4.2GB', color: 'text-amber-400' },
             ].map((s, i) => (
-              <div key={i} className="glass-panel p-6 rounded-3xl border-white/5 bg-black/40">
-                <div className="text-[8px] uppercase tracking-widest text-slate-500 mb-1">{s.label}</div>
+              <div key={i} className="p-6 rounded-3xl border border-white/5 bg-[#050505]">
+                <div className="text-[8px] uppercase tracking-widest text-slate-500 mb-1 font-black">{s.label}</div>
                 <div className={`text-xl font-black italic ${s.color}`}>{s.val}</div>
               </div>
             ))}
           </div>
 
-          <div className="glass-panel p-8 rounded-[3rem] border-white/5 bg-black/40 backdrop-blur-md min-h-[70vh]">
+          <div className="p-8 rounded-[3rem] border border-white/5 bg-[#030303] min-h-[70vh]">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
+                exit={{ opacity: 0, y: -10 }}
                 className="w-full"
               >
                 {activeTab === 'system' && (
                   <div className="space-y-8">
                     <div className="flex justify-between items-center mb-8">
                       <h3 className="text-xl font-black uppercase italic tracking-tighter text-white">System_Analytics</h3>
-                      <div className="px-4 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[9px] text-indigo-400">STATUS: OPTIMAL</div>
+                      <div className="px-4 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[9px] text-indigo-400 uppercase font-black">
+                        STATUS: ONLINE
+                      </div>
                     </div>
                     
                     <div className="h-[400px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={orders.slice(0, 10).map((o, i) => ({ n: i, v: o.totalAmount }))}>
+                        <AreaChart data={orders.length > 0 ? orders.slice(0, 10).map((o, i) => ({ n: i, v: Number(o.totalAmount) || 0 })) : [{n:0, v:0}]}>
                           <defs>
                             <linearGradient id="devGradient" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>

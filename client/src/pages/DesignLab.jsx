@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import html2canvas from 'html2canvas';
-import { placeOrder } from '../api';
+import { placeOrder, saveSession, getSessions, deleteSession } from '../api';
 import '@google/model-viewer';
 
 const DesignLab = () => {
@@ -26,6 +26,11 @@ const DesignLab = () => {
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
   const modelViewerRef = useRef(null);
+
+  // --- PERSISTENCE STATES ---
+  const [sessionId, setSessionId] = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [modelPath, setModelPath] = useState("shirt_baked.glb");
 
@@ -102,6 +107,11 @@ const DesignLab = () => {
                 setActiveElementId(null);
             }
         }
+        
+        if (e.key === 'Escape') {
+            setActiveElementId(null);
+            setActiveSidebarPanel(null);
+        }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -136,7 +146,6 @@ const DesignLab = () => {
           // Set base color to white because the color is already in the texture
           pbr.setBaseColorFactor([1, 1, 1, 1]);
         }
-        modelViewer.queueRender();
       }
     } catch (err) {
       console.error("SYNTHESIS_ERROR", err);
@@ -148,13 +157,25 @@ const DesignLab = () => {
   const handleOrder = async () => {
     setLoading(true);
     try {
+      // 👉 AUTO-BAKE: If user didn't click "Apply to 3D", capture it now
+      let finalDesignData = modelTexture;
+      if (!finalDesignData && canvasRef.current) {
+        const canvas = await html2canvas(canvasRef.current, { 
+          backgroundColor: color, 
+          useCORS: true,
+          scale: 2 
+        });
+        finalDesignData = canvas.toDataURL('image/png');
+        setModelTexture(finalDesignData);
+      }
+
       const token = localStorage.getItem('token');
       const orderData = {
         products: [{
           quantity: 1,
           customDesign: {
             type: "CANVAS_3D",
-            data: modelTexture || color
+            data: finalDesignData || color
           }
         }],
         totalAmount: 49,
@@ -162,11 +183,59 @@ const DesignLab = () => {
       };
       await placeOrder(orderData, token);
       setOrderStatus("SUCCESS // SENT_FOR_ADMIN_APPROVAL");
+      alert("ORDER_TRANSMITTED: Your design is now in the Admin Vault.");
     } catch (err) {
       console.error("ORDER_TRANSMISSION_FAILED", err);
     } finally {
       setLoading(false);
     }
+  };
+
+  // --- PERSISTENCE LOGIC ---
+  const fetchSessions = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const { data } = await getSessions(token);
+      setSessions(data);
+    } catch (err) { console.error("History fetch failed", err); }
+  };
+
+  useEffect(() => { fetchSessions(); }, [activeSidebarPanel]);
+
+  const handleSaveSession = async (isAuto = false) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    setIsSaving(true);
+    try {
+      const sessionData = {
+        sessionId,
+        name: `Design Lab - ${apparel} - ${new Date().toLocaleTimeString()}`,
+        canvasJSON: JSON.stringify(canvasElements),
+        fabricColor: color,
+        baseType: apparel,
+        aiTexture: modelTexture,
+        thumbnail: modelTexture
+      };
+      const { data } = await saveSession(sessionData, token);
+      setSessionId(data._id);
+    } catch (err) { if (!isAuto) alert("Failed to save"); }
+    finally { setIsSaving(false); }
+  };
+
+  useEffect(() => {
+    if (canvasElements.length === 0) return;
+    const timer = setTimeout(() => handleSaveSession(true), 5000);
+    return () => clearTimeout(timer);
+  }, [canvasElements, color, apparel]);
+
+  const handleLoadSession = (session) => {
+    setSessionId(session._id);
+    setApparel(session.baseType);
+    setColor(session.fabricColor);
+    setCanvasElements(JSON.parse(session.canvasJSON || '[]'));
+    setModelTexture(session.aiTexture);
+    setActiveSidebarPanel(null);
   };
 
   return (
@@ -177,6 +246,7 @@ const DesignLab = () => {
       <div className="fixed bottom-0 left-0 right-0 h-20 md:h-auto md:w-20 bg-[#020204] border-t md:border-t-0 md:border-r border-white/5 flex flex-row md:flex-col items-center justify-around md:justify-start md:pt-[40px] md:pb-4 gap-2 z-[90] shrink-0 md:top-0 md:bottom-0">
          {[
             { id: 'vault', icon: '💎', label: 'Vault' },
+            { id: 'history', icon: '🕒', label: 'History' },
             { id: 'text', icon: 'T', label: 'Text', font: 'serif' },
             { id: 'shapes', icon: '━', label: 'Lines' },
             { id: 'uploads', icon: '☁️', label: 'Upload' },
@@ -224,6 +294,37 @@ const DesignLab = () => {
                           <span className="text-[8px] font-black uppercase tracking-widest">{item.name}</span>
                         </button>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {activeSidebarPanel === 'history' && (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-white font-bold tracking-wider uppercase text-xs">Project History</h3>
+                      {isSaving && <span className="text-[8px] text-indigo-400 animate-pulse font-black uppercase">Saving...</span>}
+                    </div>
+                    <div className="space-y-3">
+                      {sessions.length === 0 ? (
+                        <p className="text-[10px] text-slate-500 text-center py-10 bg-white/5 rounded-2xl border border-dashed border-white/10 uppercase font-black">No History Node Found</p>
+                      ) : (
+                        sessions.map(s => (
+                          <div 
+                            key={s._id} onClick={() => handleLoadSession(s)}
+                            className={`group p-4 rounded-2xl border transition-all cursor-pointer ${sessionId === s._id ? 'bg-indigo-600/20 border-indigo-500' : 'bg-white/5 border-white/5 hover:border-white/20'}`}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 bg-black rounded-lg border border-white/5 flex items-center justify-center">
+                                {s.thumbnail ? <img src={s.thumbnail} className="w-full h-full object-cover" /> : <span className="text-xs">🎨</span>}
+                              </div>
+                              <div className="flex-grow min-w-0">
+                                <p className="text-[10px] font-black text-white uppercase truncate">{s.name}</p>
+                                <p className="text-[8px] text-slate-500 font-bold uppercase">{new Date(s.updatedAt).toLocaleDateString()}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 )}

@@ -1,0 +1,7 @@
+MONGO_URI=mongodb+srv://stublue2357_db_user:F1DODFeHjkkBHj8G@stdio3d.dsp2ha2.mongodb.net/studio3d?retryWrites=true&w=majority&appName=Stdio3d
+JWT_SECRET=Secure_Studio_Fallback_Key
+HF_TOKEN=hf_dummy_token_for_now
+EMAIL_USER=stublue2357@gmail.com
+EMAIL_PASS=lbtccqeefdhgapeq
+EMAIL_FROM=stublue2357@gmail.com
+PORT=5000

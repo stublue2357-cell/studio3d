@@ -11,6 +11,7 @@ import CartDrawer from './assets/components/CartDrawer.jsx';
 import ProtectedRoute from './assets/components/ProtectedRoute.jsx'; 
 import AIChatbot from './assets/components/AIChatbot.jsx';
 import CyberBackground from './assets/components/CyberBackground.jsx';
+import Preloader from './assets/components/Preloader.jsx';
 
 // --- PAGES ---
 import Home from './pages/Home.jsx';
@@ -56,6 +57,7 @@ function AppContent() {
     <div className="relative min-h-screen text-white bg-transparent font-['Plus_Jakarta_Sans'] select-none">
       
       <CyberBackground />
+      <Preloader />
       <CustomCursor />
       <Navbar />
       <CartDrawer />

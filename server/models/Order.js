@@ -19,9 +19,11 @@ const OrderSchema = new mongoose.Schema({
     city: { type: String, required: true },
     phone: { type: String, required: true }
   },
-  status: { type: String, default: 'Pending' }, // Pending, Shipped, Delivered
+  status: { type: String, default: 'Review' }, // Review, Approved, Rejected, Processing, Shipped, Delivered
+  paymentStatus: { type: String, default: 'Unpaid' }, // Unpaid, Paid
   customerNote: { type: String },
   adminFeedback: { type: String },
+  handledBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdAt: { type: Date, default: Date.now }
 });
 

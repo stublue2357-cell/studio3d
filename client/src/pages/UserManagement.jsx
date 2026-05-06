@@ -17,7 +17,7 @@ const getAvailableRoles = (myRole, targetRole) => {
   return Object.keys(roleLevels).filter(role => roleLevels[role] < myLevel);
 };
 
-const UserManagement = () => {
+const UserManagement = ({ isEmbedded = false }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
@@ -53,15 +53,17 @@ const UserManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#010413] pt-32 pb-20 px-8">
-      <div className="max-w-6xl mx-auto">
+    <div className={isEmbedded ? "" : "min-h-screen bg-[#010413] pt-32 pb-20 px-8"}>
+      <div className={isEmbedded ? "" : "max-w-6xl mx-auto"}>
         
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
-          <h1 className="text-5xl font-black italic uppercase text-white tracking-tighter">
-            Authority <span className="text-indigo-400">Control</span>
-          </h1>
-          <p className="text-slate-500 text-[10px] uppercase tracking-[0.5em] font-bold mt-4">Node Identity Management Hub</p>
-        </motion.div>
+        {!isEmbedded && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
+            <h1 className="text-5xl font-black italic uppercase text-white tracking-tighter">
+              Authority <span className="text-indigo-400">Control</span>
+            </h1>
+            <p className="text-slate-500 text-[10px] uppercase tracking-[0.5em] font-bold mt-4">Node Identity Management Hub</p>
+          </motion.div>
+        )}
 
         {message && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-6 bg-indigo-500/10 border border-indigo-500/30 p-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-indigo-400 text-center">

@@ -2,6 +2,8 @@ const router = require('express').Router();
 const Order = require('../models/Order');
 const { authMiddleware, anyAdminLevel } = require('../middleware/adminAuth');
 const { sendOrderShippedEmail } = require('../utils/emailService');
+const { logActivity } = require('../utils/activityLogger');
+const mockStore = require('../utils/mockStore');
 
 // ---------------------------------------------------------
 // 1. PLACE NEW ORDER (Public User Route)
@@ -9,7 +11,8 @@ const { sendOrderShippedEmail } = require('../utils/emailService');
 router.post('/place', authMiddleware, async (req, res) => {
   // --- MOCK BYPASS ---
   if (global.isSimulationMode) {
-      return res.status(201).json({ msg: "ORDER_INITIALIZED // MOCK_SUCCESS", order: { _id: "sim_" + Date.now(), ...req.body } });
+      const newOrder = mockStore.addOrder(req.body, req.user.id);
+      return res.status(201).json({ msg: "ORDER_INITIALIZED // MOCK_SUCCESS", order: newOrder });
   }
   try {
     const { products, totalAmount, shippingAddress, customerNote } = req.body;
@@ -27,6 +30,10 @@ router.post('/place', authMiddleware, async (req, res) => {
     });
 
     const savedOrder = await newOrder.save();
+    
+    // LOG ACTIVITY
+    await logActivity(req.user.id, "ORDER_PLACED", `New order protocol initiated (#${savedOrder._id.slice(-6)}) for $${totalAmount}`);
+
     res.status(201).json({ msg: "ORDER_INITIALIZED // SUCCESS", order: savedOrder });
   } catch (err) {
     console.error("Order Place Error:", err);
@@ -40,20 +47,12 @@ router.post('/place', authMiddleware, async (req, res) => {
 router.get('/myorders', authMiddleware, async (req, res) => {
   try {
     if (global.isSimulationMode) {
-        return res.json([
-            {
-                _id: "order_mock_001",
-                status: "Pending",
-                totalAmount: 149,
-                createdAt: new Date(),
-                customerNote: "Please ensure the neon glow is optimized for low-light environments.",
-                adminFeedback: "Analyzing transmission... Glow protocols will be calibrated as requested.",
-                products: [{ quantity: 2, product: { name: "Neon Hoodie", imageUrl: "https://via.placeholder.com/100" } }]
-            }
-        ]);
+        const userOrders = mockStore.getOrders().filter(o => (o.user && o.user._id === req.user.id) || (o.user === req.user.id));
+        return res.json(userOrders);
     }
     const orders = await Order.find({ user: req.user.id })
       .populate('products.product')
+      .populate('handledBy', 'name')
       .sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) {
@@ -64,38 +63,17 @@ router.get('/myorders', authMiddleware, async (req, res) => {
 // ---------------------------------------------------------
 // 3. GET ALL ORDERS (Admin Control Center)
 // ---------------------------------------------------------
-// 👉 Is path ko dhyan se dekhein: /api/orders/admin/all
 router.get('/admin/all', authMiddleware, anyAdminLevel, async (req, res) => {
   try {
     if (global.isSimulationMode) {
         console.log("FETCHING_MOCK_ADMIN_DATA...");
-        return res.json([
-            {
-                _id: "order_mock_001",
-                status: "Pending",
-                totalAmount: 149,
-                createdAt: new Date(),
-                user: { name: "Agent Smith", email: "smith@matrix.net" },
-                customerNote: "Please ensure the neon glow is optimized for low-light environments.",
-                adminFeedback: "Analyzing transmission... Glow protocols will be calibrated as requested.",
-                products: [{ quantity: 2, customDesign: { type: "CANVAS_3D", data: "#ff0000" } }]
-            },
-            {
-                _id: "order_mock_002",
-                status: "Shipped",
-                totalAmount: 299,
-                createdAt: new Date(Date.now() - 86400000),
-                user: { name: "Neo", email: "neo@zion.org" },
-                customerNote: "I need this before the next system reboot.",
-                adminFeedback: "Priority override engaged. Order is in transit via encrypted courier.",
-                products: [{ quantity: 1, customDesign: { type: "CANVAS_3D", data: "#000000" } }]
-            }
-        ]);
+        return res.json(mockStore.getOrders());
     }
-    console.log("Admin Data Request Received..."); // Terminal mein check karne ke liye
+    console.log("Admin Data Request Received...");
     const orders = await Order.find()
       .populate('user', 'name email')
       .populate('products.product')
+      .populate('handledBy', 'name')
       .sort({ createdAt: -1 });
     
     console.log(`Found ${orders.length} orders.`); 
@@ -110,11 +88,18 @@ router.get('/admin/all', authMiddleware, anyAdminLevel, async (req, res) => {
 // ---------------------------------------------------------
 router.patch('/status/:id', authMiddleware, anyAdminLevel, async (req, res) => {
   try {
-    const { status, totalAmount, adminFeedback } = req.body;
+    const { status, totalAmount, adminFeedback, handledBy } = req.body;
     
-    // Find the order and populate user info to get the email address
+    if (global.isSimulationMode) {
+        const order = mockStore.getOrders().find(o => o._id === req.params.id);
+        if (!order) return res.status(404).json({ msg: "ORDER_NOT_FOUND" });
+        if (status) order.status = status;
+        if (totalAmount) order.totalAmount = totalAmount;
+        if (adminFeedback) order.adminFeedback = adminFeedback;
+        return res.json({ msg: "PROTOCOL_UPDATED // MOCK_SUCCESS", order });
+    }
+
     const order = await Order.findById(req.params.id).populate('user', 'name email');
-    
     if (!order) return res.status(404).json({ msg: "ORDER_NOT_FOUND" });
 
     const oldStatus = order.status;
@@ -123,14 +108,17 @@ router.patch('/status/:id', authMiddleware, anyAdminLevel, async (req, res) => {
     if (status) order.status = status;
     if (totalAmount) order.totalAmount = totalAmount;
     if (adminFeedback) order.adminFeedback = adminFeedback;
+    if (handledBy) {
+        order.handledBy = handledBy;
+        await logActivity(handledBy, "ORDER_CLAIMED", `Administrator claimed responsibility for Order #${order._id.slice(-6)}`);
+    }
 
     await order.save();
+    await logActivity(req.user.id, "STATUS_UPDATED", `Order #${order._id.slice(-6)} status reconfigured to ${status}`);
 
     const { sendOrderStatusUpdateEmail } = require('../utils/emailService');
 
-    // TRIGGER EMAIL: If status or price changed
     if ((status && status !== oldStatus) || (totalAmount && totalAmount !== oldPrice)) {
-        console.log(`Triggering Status Update Email Sequence for Order ${order._id}...`);
         sendOrderStatusUpdateEmail(
             order.user.email, 
             order.user.name, 
@@ -145,6 +133,35 @@ router.patch('/status/:id', authMiddleware, anyAdminLevel, async (req, res) => {
     console.error("Update Status Error:", err);
     res.status(500).json({ msg: "UPDATE_ERROR // PROTOCOL_FAILED" });
   }
+});
+
+// 5. ADMIN PERFORMANCE ANALYTICS
+router.get('/admin/performance', authMiddleware, anyAdminLevel, async (req, res) => {
+    try {
+        if (global.isSimulationMode) {
+            return res.json([
+                { _id: "adm_1", name: "Agent Smith", ordersHandled: 12, completed: 8, pending: 4 },
+                { _id: "adm_2", name: "Architect", ordersHandled: 25, completed: 20, pending: 5 }
+            ]);
+        }
+        const performance = await Order.aggregate([
+            { $match: { handledBy: { $exists: true, $ne: null } } },
+            {
+                $group: {
+                    _id: "$handledBy",
+                    ordersHandled: { $sum: 1 },
+                    completed: { $sum: { $cond: [{ $in: ["$status", ["Delivered", "Shipped"]] }, 1, 0] } },
+                    pending: { $sum: { $cond: [{ $eq: ["$status", "Pending"] }, 1, 0] } }
+                }
+            },
+            { $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "adminInfo" } },
+            { $unwind: "$adminInfo" },
+            { $project: { name: "$adminInfo.name", email: "$adminInfo.email", ordersHandled: 1, completed: 1, pending: 1 } }
+        ]);
+        res.json(performance);
+    } catch (err) {
+        res.status(500).json({ msg: "ANALYTICS_FAILED // NODE_OFFLINE" });
+    }
 });
 
 module.exports = router;

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Products from './Products.jsx'; 
 import ProfileSettings from './ProfileSettings';
 import DesignLab from './DesignLab.jsx';
-import { getMyOrders } from '../api';
+import { getMyOrders, getMyActivity, getSessions } from '../api';
 
 // --- MODULE 1: ORDER LOG (With Invoice Trigger) ---
 const OrderHistory = ({ orders, loading, onOpenInvoice }) => (
@@ -24,21 +24,74 @@ const OrderHistory = ({ orders, loading, onOpenInvoice }) => (
           <motion.div key={order._id} className="glass-panel rounded-2xl p-6 border border-white/5 bg-black/40 flex justify-between items-center group hover:border-blue-500/30 transition-all">
             <div className="flex items-center gap-6">
               <div className="text-left">
-                <span className="text-[8px] font-black text-blue-500 uppercase block mb-1">NODE_ID: {order._id.slice(-8)}</span>
+                <span className="text-[8px] font-black text-blue-500 uppercase block mb-1">NODE_ID: {(order?._id || "SIM_NODE").slice(-8)}</span>
                 <h4 className="text-xs font-black text-white uppercase">{new Date(order.createdAt).toLocaleDateString()}</h4>
               </div>
             </div>
             <div className="flex items-center gap-8">
               <div className="text-right">
-                <span className="text-lg font-black text-white italic block">${order.totalAmount}.00</span>
-                <span className={`text-[8px] font-black uppercase tracking-widest ${order.status === 'Pending' ? 'text-amber-500' : 'text-blue-500'}`}>{order.status}</span>
+                <span className="text-lg font-black text-white italic block">${Number(order?.totalAmount || 0).toFixed(2)}</span>
+                <div className="flex flex-col items-end">
+                   <span className={`text-[8px] font-black uppercase tracking-widest ${
+                     order.status === 'Review' ? 'text-amber-500' : 
+                     order.status === 'Approved' ? 'text-emerald-500' : 
+                     order.status === 'Rejected' ? 'text-rose-500' : 'text-blue-500'
+                   }`}>
+                     Status: {order.status}
+                   </span>
+                   {order.status === 'Approved' && order.paymentStatus === 'Unpaid' && (
+                     <span className="text-[7px] text-cyan-400 font-black uppercase animate-pulse mt-1">Ready for Payment</span>
+                   )}
+                </div>
               </div>
-              <button 
-                onClick={() => onOpenInvoice(order)}
-                className="px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase text-slate-400 hover:text-white hover:bg-blue-600 transition-all"
-              >
-                Details
-              </button>
+              <div className="flex gap-2">
+                {order.status === 'Approved' && order.paymentStatus === 'Unpaid' && (
+                  <button className="px-5 py-2.5 bg-emerald-600 border border-emerald-500/50 rounded-xl text-[9px] font-black uppercase text-white hover:bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all">
+                    Secure Payment
+                  </button>
+                )}
+                <button 
+                  onClick={() => onOpenInvoice(order)}
+                  className="px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase text-slate-400 hover:text-white hover:bg-blue-600 transition-all"
+                >
+                  Details
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    )}
+  </div>
+);
+
+
+// --- MODULE 2: ACTIVITY LOG ---
+const ActivityLog = ({ activities, loading }) => (
+  <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+      <h3 className="text-xl font-black italic uppercase text-white tracking-tighter">Signal <span className="text-blue-500">Log</span></h3>
+    </div>
+
+    {loading ? (
+      <div className="py-20 text-center text-blue-500 text-[10px] font-black tracking-[0.5em] animate-pulse">RECONSTRUCTING_DATA...</div>
+    ) : activities.length === 0 ? (
+      <div className="glass-panel rounded-3xl p-16 border-white/5 bg-white/[0.02] text-center border-dashed border-2">
+        <div className="text-slate-600 text-[10px] font-black tracking-widest uppercase">No activity signatures detected.</div>
+      </div>
+    ) : (
+      <div className="space-y-4">
+        {activities.map((activity) => (
+          <motion.div key={activity._id} className="glass-panel rounded-2xl p-5 border border-white/5 bg-black/40 flex gap-6 items-start">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-lg shrink-0">
+               {activity.action.includes('LOGIN') ? '🔐' : activity.action.includes('DESIGN') ? '🎨' : '📦'}
+            </div>
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">{activity.action}</span>
+                <span className="text-[8px] text-slate-600 uppercase">{new Date(activity.timestamp).toLocaleString()}</span>
+              </div>
+              <p className="text-[11px] text-slate-300 font-medium leading-relaxed">{activity.details}</p>
             </div>
           </motion.div>
         ))}
@@ -62,10 +115,53 @@ const BillingSettings = () => (
 );
 
 // --- MAIN DASHBOARD COMPONENT ---
+// --- MODULE 3: NEURAL VAULT (Draft Management) ---
+const NeuralVault = ({ sessions, loading }) => (
+  <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+      <h3 className="text-xl font-black italic uppercase text-white tracking-tighter">Neural <span className="text-blue-500">Vault</span></h3>
+    </div>
+
+    {loading ? (
+      <div className="py-20 text-center text-blue-500 text-[10px] font-black tracking-[0.5em] animate-pulse">SYNCHRONIZING_DRAFTS...</div>
+    ) : sessions.length === 0 ? (
+      <div className="glass-panel rounded-3xl p-16 border-white/5 bg-white/[0.02] text-center border-dashed border-2">
+        <div className="text-slate-600 text-[10px] font-black tracking-widest uppercase">No neural snapshots found.</div>
+      </div>
+    ) : (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {sessions.map((session) => (
+          <motion.div key={session._id} className="glass-panel rounded-2xl p-4 border border-white/5 bg-black/40 hover:border-blue-500/30 transition-all flex gap-4 items-center group">
+            <div className="w-16 h-16 rounded-xl bg-white/5 border border-white/5 overflow-hidden flex items-center justify-center shrink-0">
+               {session.thumbnail ? (
+                 <img src={session.thumbnail} alt="" className="w-full h-full object-cover" />
+               ) : (
+                 <span className="text-xl">🎨</span>
+               )}
+            </div>
+            <div className="flex-1 min-w-0">
+               <h4 className="text-[10px] font-black text-white uppercase truncate">{session.name || "Unnamed Design"}</h4>
+               <p className="text-[8px] text-slate-500 uppercase font-bold tracking-widest mt-0.5">{session.baseType || "Apparel"} Protocol</p>
+               <span className="text-[7px] text-slate-600 block mt-1">{new Date(session.updatedAt).toLocaleString()}</span>
+            </div>
+            <button className="px-4 py-2 bg-blue-600/10 border border-blue-500/30 rounded-lg text-[8px] font-black uppercase text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+               RESUME
+            </button>
+          </motion.div>
+        ))}
+      </div>
+    )}
+  </div>
+);
+
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('orders'); 
   const [orders, setOrders] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activityLoading, setActivityLoading] = useState(true);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
 
@@ -74,11 +170,21 @@ const Dashboard = () => {
       try {
         const token = localStorage.getItem('token');
         if (token) {
-          const { data } = await getMyOrders(token);
-          setOrders(data);
+          const [orderRes, activityRes, sessionRes] = await Promise.all([
+            getMyOrders(token),
+            getMyActivity(token),
+            getSessions(token)
+          ]);
+          setOrders(Array.isArray(orderRes.data) ? orderRes.data : []);
+          setActivities(Array.isArray(activityRes.data) ? activityRes.data : []);
+          setSessions(Array.isArray(sessionRes.data) ? sessionRes.data : []);
         }
       } catch (error) { console.error("Signal Lost:", error); }
-      finally { setLoading(false); }
+      finally { 
+        setLoading(false); 
+        setActivityLoading(false);
+        setSessionsLoading(false);
+      }
     };
     fetchSignals();
   }, []);
@@ -90,8 +196,10 @@ const Dashboard = () => {
 
   const sidebarTabs = [
     { id: 'lab', label: 'Design Lab', section: 'Creation' },
+    { id: 'drafts', label: 'Neural Drafts', section: 'Creation' },
     { id: 'collection', label: 'Vault', section: 'Creation' },
     { id: 'orders', label: 'History', section: 'Account' },
+    { id: 'activity', label: 'Signal Log', section: 'Account' },
     { id: 'profile', label: 'Security & Profile', section: 'Account' },
     { id: 'billing', label: 'Destination', section: 'Account' },
   ];
@@ -128,8 +236,10 @@ const Dashboard = () => {
         <AnimatePresence mode="wait">
           <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="h-full">
             {activeTab === 'lab' && <DesignLab />}
+            {activeTab === 'drafts' && <div className="p-8"><NeuralVault sessions={sessions} loading={sessionsLoading} /></div>}
             {activeTab === 'collection' && <div className="p-8"><Products isDashboard={true} /></div>}
             {activeTab === 'orders' && <div className="p-8"><OrderHistory orders={orders} loading={loading} onOpenInvoice={openInvoice} /></div>}
+            {activeTab === 'activity' && <div className="p-8"><ActivityLog activities={activities} loading={activityLoading} /></div>}
             {activeTab === 'profile' && <div className="p-8"><ProfileSettings /></div>}
             {activeTab === 'billing' && <div className="p-8"><BillingSettings /></div>}
           </motion.div>
@@ -149,7 +259,7 @@ const Dashboard = () => {
               <div className="grid grid-cols-2 gap-8 mb-10 text-[10px] uppercase font-bold tracking-widest">
                 <div className="space-y-2">
                   <p className="text-slate-500">Transmission Date: <span className="text-white ml-2">{new Date(selectedOrder.createdAt).toLocaleDateString()}</span></p>
-                  <p className="text-slate-500">ID Node: <span className="text-white ml-2">#{selectedOrder._id.slice(-8)}</span></p>
+                  <p className="text-slate-500">ID Node: <span className="text-white ml-2">#{(selectedOrder?._id || "SIM_NODE").slice(-8)}</span></p>
                 </div>
                 <div className="text-right space-y-2">
                   <p className="text-slate-500">Status Node: <span className="text-blue-500 ml-2">{selectedOrder.status}</span></p>
@@ -158,13 +268,13 @@ const Dashboard = () => {
               </div>
 
               <div className="space-y-4 max-h-[200px] overflow-y-auto pr-2 mb-8 custom-scrollbar">
-                {selectedOrder.products.map((item, idx) => (
+                {(selectedOrder?.products || []).map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between bg-white/[0.03] p-4 rounded-xl border border-white/5">
                     <div className="flex items-center gap-4">
                       <img src={item.product?.imageUrl} className="w-10 h-10 rounded-lg object-cover" alt="" />
                       <span className="text-white text-[10px] font-black uppercase">{item.product?.name}</span>
                     </div>
-                    <span className="text-slate-500 text-[9px]">Qty: {item.quantity}</span>
+                    <span className="text-slate-500 text-[9px]">Qty: {item.quantity || 1}</span>
                   </div>
                 ))}
               </div>
@@ -180,10 +290,15 @@ const Dashboard = () => {
 
                 {selectedOrder.adminFeedback && (
                   <div className="p-4 rounded-xl bg-blue-600/10 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
-                    <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-1 flex items-center gap-2">
-                      <span className="w-1 h-1 bg-blue-500 rounded-full animate-pulse" />
-                      Admin Feed / Reply
-                    </p>
+                    <div className="flex justify-between items-center mb-1">
+                      <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                        <span className="w-1 h-1 bg-blue-500 rounded-full animate-pulse" />
+                        Admin Feed / Reply
+                      </p>
+                      {selectedOrder.handledBy && (
+                        <span className="text-[7px] text-blue-300/50 uppercase font-bold tracking-widest">Handled by {selectedOrder.handledBy.name}</span>
+                      )}
+                    </div>
                     <p className="text-[10px] text-white font-bold tracking-wide leading-relaxed">
                       {selectedOrder.adminFeedback}
                     </p>

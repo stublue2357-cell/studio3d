@@ -73,6 +73,11 @@ export const updateOrderStatus = (id, payload, token) => API.patch(`/orders/stat
   headers: { 'x-auth-token': token }
 });
 
+// 5. Admin performance analytics (Executive only)
+export const getAdminPerformance = (token) => API.get('/orders/admin/performance', {
+  headers: { 'x-auth-token': token }
+});
+
 // ==========================================
 // 🛡️ ADVANCED ADMINISTRATIVE APIS
 // ==========================================
@@ -106,6 +111,62 @@ export const changePassword = (payload, token) => {
 // 5. Update Profile (All users)
 export const updateProfile = (payload, token) => {
   return API.patch('/auth/update-profile', payload, {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+export const getMyActivity = (token) => {
+  return API.get('/auth/my-activity', {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+export const getAllActivity = (token) => {
+  return API.get('/auth/all-activity', {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+// ==========================================
+// 🧠 NEURAL AI & SYNTHESIS APIS
+// ==========================================
+
+export const generateImage = (prompt, token) => {
+  return API.post('/ai/generate', { prompt }, {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+export const getAiSuggestion = (prompt, token) => {
+  return API.post('/ai/suggest', { prompt }, {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+// ==========================================
+// 🕒 DESIGN HISTORY & SESSIONS APIS
+// ==========================================
+
+export const saveSession = (sessionData, token) => {
+  return API.post('/sessions', sessionData, {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+export const getSessions = (token) => {
+  return API.get('/sessions', {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+export const getSessionById = (id, token) => {
+  return API.get(`/sessions/${id}`, {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+export const deleteSession = (id, token) => {
+  return API.delete(`/sessions/${id}`, {
     headers: { 'x-auth-token': token }
   });
 };

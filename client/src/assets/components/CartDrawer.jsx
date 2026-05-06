@@ -57,7 +57,13 @@ const CartDrawer = () => {
               ) : (
                 cartItems.map((item, index) => (
                   <div key={index} className="flex gap-4 items-center bg-white/[0.02] p-4 rounded-2xl border border-white/5">
-                    <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover border border-white/10" />
+                    <div className="w-16 h-16 rounded-xl bg-black border border-white/10 overflow-hidden flex items-center justify-center">
+                      <img 
+                        src={item.customDesign?.data?.overlayImage || item.customDesign?.data?.aiImage || item.image || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=200&auto=format&fit=crop'} 
+                        alt={item.name} 
+                        className="w-full h-full object-cover" 
+                      />
+                    </div>
                     <div className="flex-1">
                       <h3 className="text-[10px] font-bold text-white uppercase tracking-widest mb-1">{item.name}</h3>
                       <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Qty: {item.quantity}</p>

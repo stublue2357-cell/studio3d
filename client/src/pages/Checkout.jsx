@@ -189,9 +189,12 @@ const Checkout = () => {
             <div className="space-y-6 mb-8 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
               {cartItems.map((item, index) => (
                 <div key={index} className="flex gap-4 items-center">
-                  <div className="w-16 h-16 bg-white/5 rounded-xl overflow-hidden shrink-0 border border-white/5">
-                    {/* 👉 imageUrl use kiya backend data ke liye */}
-                    <img src={item.imageUrl || item.image} alt={item.name} className="w-full h-full object-cover opacity-80" />
+                  <div className="w-16 h-16 bg-black rounded-xl overflow-hidden shrink-0 border border-white/10 flex items-center justify-center">
+                    <img 
+                      src={item.customDesign?.data?.overlayImage || item.customDesign?.data?.aiImage || item.imageUrl || item.image || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=200&auto=format&fit=crop'} 
+                      alt={item.name} 
+                      className="w-full h-full object-cover opacity-90" 
+                    />
                   </div>
                   <div className="flex-1">
                     <h4 className="text-[10px] font-bold uppercase tracking-widest text-white mb-1">{item.name}</h4>
@@ -214,12 +217,15 @@ const Checkout = () => {
               </div>
               <div className="flex justify-between items-center text-[14px] font-black uppercase tracking-[0.2em] text-white pt-4 border-t border-white/5">
                 <span>Total</span>
-                <span className="text-indigo-400 drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]">${total}.00</span>
+                <span className="text-indigo-400 drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]">${total.toFixed(2)}</span>
               </div>
             </div>
             <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} form="checkout-form" type="submit" disabled={isProcessing} className={`w-full py-5 rounded-xl text-[10px] font-black uppercase tracking-[0.4em] transition-all shadow-2xl ${isProcessing ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white hover:shadow-indigo-500/20'}`}>
-              {isProcessing ? 'Transmitting Order...' : 'Confirm Synthesis Order'}
+              {isProcessing ? 'Transmitting Design...' : 'Submit Design for Review'}
             </motion.button>
+            <p className="mt-4 text-[8px] text-slate-600 font-bold uppercase tracking-widest text-center">
+              Note: Payment protocol will sync after Admin Verification.
+            </p>
           </div>
         </div>
       </div>

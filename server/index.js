@@ -1,3 +1,4 @@
+// STUDIO3D SERVER CORE
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -8,6 +9,7 @@ const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders'); 
 const aiRoutes = require('./routes/ai');
+const sessionRoutes = require('./routes/sessions');
 const app = express();
 
 // --- GLOBAL SIMULATION MODE (Default: ON) ---
@@ -26,6 +28,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes); 
 app.use('/api/ai', aiRoutes);
+app.use('/api/sessions', sessionRoutes);
 
 // --- NEURAL DATABASE CONNECTION ---
 const connectDB = async () => {

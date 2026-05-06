@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAllOrdersAdmin, updateOrderStatus } from '../api';
+import '@google/model-viewer';
 
 const AdminOrders = ({ isEmbedded }) => {
   const [orders, setOrders] = useState([]);
@@ -17,8 +18,11 @@ const AdminOrders = ({ isEmbedded }) => {
     try {
       const token = localStorage.getItem('token');
       const { data } = await getAllOrdersAdmin(token);
-      setOrders(data);
-    } catch (err) { console.error(err); }
+      setOrders(Array.isArray(data) ? data : []);
+    } catch (err) { 
+      console.error(err); 
+      setOrders([]);
+    }
     finally { setLoading(false); }
   };
 
@@ -34,15 +38,34 @@ const AdminOrders = ({ isEmbedded }) => {
     } catch (err) { alert("PROTOCOL_ERROR"); }
   };
 
+  const handleClaim = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      let user = null;
+      try {
+        user = userStr ? JSON.parse(userStr) : null;
+      } catch (e) {
+        console.error("USER_PARSE_ERROR", e);
+      }
+      
+      if (!user) return alert("AUTH_ERROR // RE-LOGIN_REQUIRED");
+
+      const payload = { handledBy: user._id };
+      await updateOrderStatus(id, payload, token);
+      fetchOrders();
+    } catch (err) { alert("CLAIM_ERROR // LINK_FAILED"); }
+  };
+
   // 👉 Invoice Open Logic
   const openInvoice = (order) => {
     setSelectedOrder(order);
     setIsModalOpen(true);
   };
 
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = order._id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          order.user?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredOrders = (Array.isArray(orders) ? orders : []).filter(order => {
+    if (!order) return false;
+    const matchesSearch = (order._id || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (order.user?.name || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'All' || order.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -80,35 +103,55 @@ const AdminOrders = ({ isEmbedded }) => {
               <th className="py-5 px-4 italic">Identity</th>
               <th className="py-5 px-4 italic">Value</th>
               <th className="py-5 px-4 italic">Status</th>
+              <th className="py-5 px-4 italic">Agent</th>
               <th className="py-5 px-6 text-right italic">Protocol</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5 text-slate-300">
             {loading ? (
-              <tr><td colSpan="5" className="py-20 text-center text-indigo-400 animate-pulse tracking-[0.5em]">Syncing_Mainframe...</td></tr>
+              <tr><td colSpan="6" className="py-20 text-center text-indigo-400 animate-pulse tracking-[0.5em]">Syncing_Mainframe...</td></tr>
             ) : filteredOrders.map((order) => (
               <tr key={order._id} className="hover:bg-white/[0.01] transition-colors">
-                <td className="py-4 px-6 text-indigo-400 font-mono">#{order._id.slice(-6)}</td>
+                <td className="py-4 px-6 text-indigo-400 font-mono">#{ (order?._id || "SIM_NODE").slice(-6) }</td>
                 <td className="py-4 px-4 text-white font-black">{order.user?.name || "Guest_Node"}</td>
-                <td className="py-4 px-4 text-white text-[12px] font-black italic">${order.totalAmount}</td>
+                <td className="py-4 px-4 text-white text-[12px] font-black italic">${Number(order.totalAmount || 0).toFixed(2)}</td>
                 <td className="py-4 px-4">
-                  <span className={`px-2 py-1 rounded-md text-[7px] font-black border ${order.status === 'Pending' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'}`}>
+                  <span className={`px-2 py-1 rounded-md text-[7px] font-black border ${
+                    order.status === 'Review' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
+                    order.status === 'Approved' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+                    order.status === 'Rejected' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
+                    'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                  }`}>
                     {order.status}
                   </span>
                 </td>
+                <td className="py-4 px-4">
+                  {order.handledBy ? (
+                    <span className="text-indigo-400 text-[8px] font-black uppercase tracking-widest">
+                      {typeof order.handledBy === 'object' ? (order.handledBy?.name || "ACTIVE_ADMIN") : "ASSIGNED_AGENT"}
+                    </span>
+                  ) : (
+                    <button 
+                      onClick={() => handleClaim(order._id)}
+                      className="bg-indigo-600/10 border border-indigo-500/30 text-indigo-400 text-[7px] px-2 py-1 rounded hover:bg-indigo-600 hover:text-white transition-all font-black"
+                    >
+                      CLAIM_NODE
+                    </button>
+                  )}
+                </td>
                 <td className="py-4 px-6 text-right space-x-4">
-                  {/* 👉 Digital Protocol Button */}
-                  <button onClick={() => openInvoice(order)} className="text-indigo-400 hover:text-white transition-all text-[9px] underline underline-offset-4">Details</button>
+                  <button onClick={() => openInvoice(order)} className="text-indigo-400 hover:text-white transition-all text-[9px] font-black uppercase tracking-widest">Protocol_Details</button>
                   <select 
                     onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                    className="bg-black/60 border border-white/10 text-[8px] p-2 rounded-lg text-slate-400 outline-none"
+                    className="bg-black/60 border border-white/10 text-[8px] p-2 rounded-lg text-slate-400 outline-none font-black"
                     value={order.status}
                   >
-                    <option value="Pending">Set_Pending</option>
-                    <option value="Approved">Set_Approved</option>
-                    <option value="Rejected">Set_Rejected</option>
-                    <option value="Shipped">Set_Shipped</option>
-                    <option value="Delivered">Set_Delivered</option>
+                    <option value="Review">IN_REVIEW</option>
+                    <option value="Approved">APPROVE_DESIGN</option>
+                    <option value="Rejected">REJECT_DESIGN</option>
+                    <option value="Processing">SET_PROCESSING</option>
+                    <option value="Shipped">SET_SHIPPED</option>
+                    <option value="Delivered">SET_DELIVERED</option>
                   </select>
                 </td>
               </tr>
@@ -150,6 +193,9 @@ const AdminOrders = ({ isEmbedded }) => {
                   <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">Status_Node</h4>
                   <div className="text-indigo-400 text-sm font-black italic tracking-widest uppercase">{selectedOrder.status}</div>
                   <div className="text-slate-500 text-[9px] uppercase font-bold tracking-widest">Method: {selectedOrder.paymentMethod}</div>
+                  {selectedOrder.handledBy && (
+                    <div className="text-indigo-400 text-[8px] font-black uppercase mt-1">Assigned Agent: {selectedOrder.handledBy.name}</div>
+                  )}
                   <div className="flex items-center justify-end gap-3 mt-4">
                      <span className="text-slate-500 text-[9px] uppercase font-black">Price:</span>
                      <input 
@@ -178,7 +224,7 @@ const AdminOrders = ({ isEmbedded }) => {
               <div className="relative z-10">
                 <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6 border-b border-white/5 pb-2">Payload_Intel</h4>
                 <div className="grid grid-cols-1 gap-4 max-h-[250px] overflow-y-auto pr-4">
-                  {selectedOrder.products.map((item, idx) => (
+                  {(selectedOrder?.products || []).map((item, idx) => (
                     <div key={idx} className="flex flex-col bg-white/[0.03] p-6 rounded-3xl border border-white/5 space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -188,21 +234,75 @@ const AdminOrders = ({ isEmbedded }) => {
                             <div className="text-slate-500 text-[8px] uppercase font-bold">Qty: {item.quantity} // Size: {item.size || 'M'}</div>
                           </div>
                         </div>
-                        <div className="text-white text-[11px] font-black italic">${item.product?.price * item.quantity}.00</div>
-                      </div>
+                            <div className="text-white text-[11px] font-black italic">${(item.product?.price || 49) * item.quantity}.00</div>
+                          </div>
+    
+                          {/* --- CUSTOM DESIGN PREVIEW (3D VIEW) --- */}
+                          {item.customDesign?.data && (
+                            <div className="mt-4 pt-4 border-t border-white/5">
+                               <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                 <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+                                 Live_Neural_3D_Preview ({item.customDesign?.type || 'STANDARD'})
+                               </p>
+                               <div className="flex flex-col md:flex-row gap-6">
+                                 {/* Flat Texture / Color View */}
+                                 <div className="aspect-square w-full max-w-[150px] rounded-2xl overflow-hidden border border-white/10 bg-black/40 flex items-center justify-center">
+                                    {(() => {
+                                        const designData = item.customDesign?.data;
+                                        const actualData = typeof designData === 'object' ? (designData.overlayImage || designData.aiImage) : designData;
+                                        
+                                        if (typeof actualData === 'string' && actualData.startsWith('#')) {
+                                            return <div className="w-full h-full" style={{ backgroundColor: actualData }} />;
+                                        }
+                                        return <img src={actualData || '/placeholder_design.png'} className="w-full h-full object-cover" alt="Texture" />;
+                                    })()}
+                                 </div>
+                                 
+                                 {/* 3D Model View */}
+                                 <div className="flex-grow h-[220px] rounded-2xl overflow-hidden border border-white/10 bg-black/60 relative group">
+                                    <model-viewer
+                                      src="/shirt_baked.glb"
+                                      camera-controls
+                                      auto-rotate
+                                      shadow-intensity="1"
+                                      style={{ width: '100%', height: '100%' }}
+                                      onLoad={(e) => {
+                                        const mv = e.target;
+                                        if (mv.model) {
+                                          const designData = item.customDesign?.data;
+                                          const actualData = typeof designData === 'object' ? (designData.overlayImage || designData.aiImage) : designData;
 
-                      {/* --- CUSTOM DESIGN PREVIEW --- */}
-                      {item.customDesign?.data && (
-                        <div className="mt-4 pt-4 border-t border-white/5">
-                           <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                             <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
-                             Custom_Design_Output ({item.customDesign.type})
-                           </p>
-                           <div className="aspect-square w-full max-w-[200px] rounded-2xl overflow-hidden border border-white/10 bg-black/40">
-                              <img src={item.customDesign.data} className="w-full h-full object-cover" alt="Custom Design" />
-                           </div>
-                        </div>
-                      )}
+                                          if (typeof actualData === 'string' && actualData.startsWith('data:image')) {
+                                            mv.createTexture(actualData).then(tex => {
+                                              for (const mat of mv.model.materials) {
+                                                if (mat.pbrMetallicRoughness.baseColorTexture) {
+                                                    mat.pbrMetallicRoughness.baseColorTexture.setTexture(tex);
+                                                }
+                                                mat.pbrMetallicRoughness.setBaseColorFactor([1,1,1,1]);
+                                              }
+                                            }).catch(e => console.error("TEX_ERROR", e));
+                                          } else if (typeof actualData === 'string' && actualData.startsWith('#')) {
+                                            // Apply solid color to 3D model
+                                            const hex = actualData;
+                                            try {
+                                              const r = parseInt(hex.slice(1,3), 16) / 255 || 1;
+                                              const g = parseInt(hex.slice(3,5), 16) / 255 || 1;
+                                              const b = parseInt(hex.slice(5,7), 16) / 255 || 1;
+                                              for (const mat of mv.model.materials) {
+                                                mat.pbrMetallicRoughness.setBaseColorFactor([r, g, b, 1]);
+                                              }
+                                            } catch (e) {
+                                              console.error("COLOR_PARSE_ERROR", e);
+                                            }
+                                          }
+                                        }
+                                      }}
+                                    />
+                                    <div className="absolute top-2 right-2 text-[6px] font-black uppercase text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 px-2 py-1 rounded">Interactive_Node</div>
+                                 </div>
+                               </div>
+                            </div>
+                          )}
                     </div>
                   ))}
                 </div>

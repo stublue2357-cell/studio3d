@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import AdminOrders from './AdminOrders'; 
+import AdminPerformance from './AdminPerformance';
 import UserManagement from './UserManagement';
 import ProfileSettings from './ProfileSettings';
 import { getAllOrdersAdmin } from '../api';
@@ -40,6 +41,7 @@ const OwnerDashboard = () => {
     { id: 'staff', label: 'System Access', icon: '👥' },
     { id: 'settings', label: 'Security & Profile', icon: '🛡️' },
     { id: 'reports', label: 'Executive Reports', icon: '📊' },
+    { id: 'performance', label: 'Agent Performance', icon: '🕵️' },
   ];
 
   return (
@@ -185,6 +187,7 @@ const OwnerDashboard = () => {
 
                 {activeTab === 'orders' && <AdminOrders isEmbedded={true} />}
                 {activeTab === 'staff' && <UserManagement isEmbedded={true} />}
+                {activeTab === 'performance' && <AdminPerformance />}
                 {activeTab === 'settings' && <ProfileSettings />}
                 
                 {activeTab === 'reports' && (

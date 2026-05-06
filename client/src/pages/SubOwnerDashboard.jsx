@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import AdminOrders from './AdminOrders'; 
+import AdminPerformance from './AdminPerformance';
 import UserManagement from './UserManagement';
 import AdminProducts from './AdminProducts';
 import ProfileSettings from './ProfileSettings';
@@ -37,6 +38,7 @@ const SubOwnerDashboard = () => {
     { id: 'inventory', label: 'Inventory', icon: '🏪' },
     { id: 'orders', label: 'Order Desk', icon: '📝' },
     { id: 'users', label: 'Staff Node', icon: '👤' },
+    { id: 'performance', label: 'Agent Monitoring', icon: '📡' },
     { id: 'settings', label: 'Security & Profile', icon: '🛡️' },
   ];
 
@@ -168,6 +170,7 @@ const SubOwnerDashboard = () => {
                 {activeTab === 'inventory' && <AdminProducts isEmbedded={true} />}
                 {activeTab === 'orders' && <AdminOrders isEmbedded={true} />}
                 {activeTab === 'users' && <UserManagement isEmbedded={true} />}
+                {activeTab === 'performance' && <AdminPerformance />}
                 {activeTab === 'settings' && <ProfileSettings />}
                 
               </motion.div>

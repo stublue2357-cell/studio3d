@@ -1,7 +1,9 @@
 import React from 'react'
 import { easing } from 'maath';
 import { useFrame } from '@react-three/fiber';
-import { Decal, useGLTF, useTexture } from '@react-three/drei';
+import { Decal, useGLTF } from '@react-three/drei';
+
+import * as THREE from 'three';
 
 /**
  * SHIRT COMPONENT (3D VISUALIZATION LAYER)
@@ -77,9 +79,31 @@ const Shirt = ({ baseType, aiTexture, overlayTexture }) => {
 
   const fallbackTexture = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
   
-  // Custom hook usage requires checking if texture exists, or we pass fallback
-  const aiTex = useTexture(aiTexture || fallbackTexture);
-  const overlayTex = useTexture(overlayTexture || fallbackTexture);
+  const [aiTex, setAiTex] = React.useState(null);
+  const [overlayTex, setOverlayTex] = React.useState(null);
+
+  // Manual Texture Loading to avoid Suspense "Blank Screen" issues
+  React.useEffect(() => {
+    if (aiTexture) {
+      new THREE.TextureLoader().load(aiTexture, (tex) => {
+        tex.anisotropy = 16;
+        setAiTex(tex);
+      });
+    } else {
+      setAiTex(null);
+    }
+  }, [aiTexture]);
+
+  React.useEffect(() => {
+    if (overlayTexture) {
+      new THREE.TextureLoader().load(overlayTexture, (tex) => {
+        tex.anisotropy = 16;
+        setOverlayTex(tex);
+      });
+    } else {
+      setOverlayTex(null);
+    }
+  }, [overlayTexture]);
 
   useFrame((state, delta) => {
     meshes.forEach((mesh) => {
@@ -134,7 +158,7 @@ const Shirt = ({ baseType, aiTexture, overlayTexture }) => {
             }}
           >
             {/* Apply decals to the primary mesh (index 0) or the currently selected mesh */}
-            {(index === 0 || activeMesh === meshId) && aiTexture && (
+            {(index === 0 || activeMesh === meshId) && aiTex && (
                 <Decal 
                     position={[0, 0.04, 0.15]}
                     rotation={[0, 0, 0]}
@@ -146,7 +170,7 @@ const Shirt = ({ baseType, aiTexture, overlayTexture }) => {
                 />
             )}
 
-            {(index === 0 || activeMesh === meshId) && overlayTexture && (
+            {(index === 0 || activeMesh === meshId) && overlayTex && (
                 <Decal 
                     position={[0, 0.04, 0.151]} // Slightly in front to prevent z-fighting
                     rotation={[0, 0, 0]}

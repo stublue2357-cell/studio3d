@@ -47,15 +47,20 @@ const Checkout = () => {
       
       // Backend ke Order Model ke mutabiq data tyar karna
       const orderPayload = {
-        products: cartItems.map(item => ({
-          product: item.originalId || item._id, // MongoDB ki ID (original ID reference)
-          quantity: item.quantity,
-          size: item.size || 'M',
-          customDesign: item.customDesign ? {
-            type: item.customDesign.type,
-            data: item.customDesign.data
-          } : null
-        })),
+        products: cartItems.map(item => {
+          const productId = item.originalId || item._id;
+          const isValidObjectId = typeof productId === 'string' && productId.length === 24 && /^[0-9a-fA-F]{24}$/.test(productId);
+          
+          return {
+            product: isValidObjectId ? productId : null,
+            quantity: item.quantity,
+            size: item.size || 'M',
+            customDesign: item.customDesign ? {
+              type: item.customDesign.type,
+              data: item.customDesign.data
+            } : null
+          };
+        }),
         totalAmount: total,
         shippingAddress: {
           address: `${shippingData.firstName} ${shippingData.lastName}, ${shippingData.address}`,

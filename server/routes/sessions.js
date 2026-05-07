@@ -31,7 +31,10 @@ router.post('/', auth, async (req, res) => {
   try {
     const { sessionId, name, canvasJSON, fabricColor, baseType, aiTexture, chatHistory, thumbnail } = req.body;
 
-    if (sessionId) {
+    // SANITIZE SESSION ID: Prevent CastError if sessionId is invalid
+    const isValidSessionId = sessionId && typeof sessionId === 'string' && sessionId.length === 24 && /^[0-9a-fA-F]{24}$/.test(sessionId);
+
+    if (isValidSessionId) {
       const session = await Session.findOneAndUpdate(
         { _id: sessionId, userId: req.user.id },
         { name, canvasJSON, fabricColor, baseType, aiTexture, chatHistory, thumbnail },

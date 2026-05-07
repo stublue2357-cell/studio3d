@@ -21,9 +21,18 @@ router.post('/place', authMiddleware, async (req, res) => {
       return res.status(400).json({ msg: "EMPTY_VAULT // CANNOT_PROCESS" });
     }
 
+    // SANITIZE PRODUCTS: Ensure 'product' is a valid ObjectId or null
+    const sanitizedProducts = products.map(p => {
+      const isValid = p.product && typeof p.product === 'string' && p.product.length === 24 && /^[0-9a-fA-F]{24}$/.test(p.product);
+      return {
+        ...p,
+        product: isValid ? p.product : undefined // Omit if invalid
+      };
+    });
+
     const newOrder = new Order({
       user: req.user.id,
-      products,
+      products: sanitizedProducts,
       totalAmount,
       shippingAddress,
       customerNote
@@ -32,7 +41,7 @@ router.post('/place', authMiddleware, async (req, res) => {
     const savedOrder = await newOrder.save();
     
     // LOG ACTIVITY
-    await logActivity(req.user.id, "ORDER_PLACED", `New order protocol initiated (#${savedOrder._id.slice(-6)}) for $${totalAmount}`);
+    await logActivity(req.user.id, "ORDER_PLACED", `New order protocol initiated (#${savedOrder._id.toString().slice(-6)}) for $${totalAmount}`);
 
     res.status(201).json({ msg: "ORDER_INITIALIZED // SUCCESS", order: savedOrder });
   } catch (err) {
@@ -110,11 +119,11 @@ router.patch('/status/:id', authMiddleware, anyAdminLevel, async (req, res) => {
     if (adminFeedback) order.adminFeedback = adminFeedback;
     if (handledBy) {
         order.handledBy = handledBy;
-        await logActivity(handledBy, "ORDER_CLAIMED", `Administrator claimed responsibility for Order #${order._id.slice(-6)}`);
+        await logActivity(handledBy, "ORDER_CLAIMED", `Administrator claimed responsibility for Order #${order._id.toString().slice(-6)}`);
     }
 
     await order.save();
-    await logActivity(req.user.id, "STATUS_UPDATED", `Order #${order._id.slice(-6)} status reconfigured to ${status}`);
+    await logActivity(req.user.id, "STATUS_UPDATED", `Order #${order._id.toString().slice(-6)} status reconfigured to ${status}`);
 
     const { sendOrderStatusUpdateEmail } = require('../utils/emailService');
 

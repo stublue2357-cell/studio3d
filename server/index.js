@@ -30,22 +30,36 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/sessions', sessionRoutes);
 
-// --- NEURAL DATABASE CONNECTION ---
+// --- NEURAL DATABASE MONITORING ---
+mongoose.connection.on('connected', () => {
+    global.isSimulationMode = false;
+    console.log("\x1b[32m%s\x1b[0m", "DATABASE_CONNECTED // SYNCHRONIZATION_COMPLETE");
+});
+
+mongoose.connection.on('error', (err) => {
+    global.isSimulationMode = true;
+    console.log("\x1b[31m%s\x1b[0m", "DATABASE_ERROR // NEURAL_LINK_CORRUPTED");
+    console.error("REASON:", err.message);
+});
+
+mongoose.connection.on('disconnected', () => {
+    global.isSimulationMode = true;
+    console.log("\x1b[33m%s\x1b[0m", "DATABASE_DISCONNECTED // ENTERING_MOCK_RECOVERY_MODE");
+});
+
 const connectDB = async () => {
     try {
         console.log("SYNCHRONIZING_WITH_MAIN_FRAME...");
         // Set a shorter timeout and disable buffering so queries don't hang
         await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/studio3d', {
-            serverSelectionTimeoutMS: 5000,
-            bufferCommands: false, // Stop waiting for the database
+            serverSelectionTimeoutMS: 10000,
+            bufferCommands: false, 
             autoIndex: false 
         });
-        global.isSimulationMode = false; // Disable bypass since DB is UP
-        console.log("\x1b[32m%s\x1b[0m", "DATABASE_CONNECTED // SYNCHRONIZATION_COMPLETE");
     } catch (err) {
         global.isSimulationMode = true; 
         console.log("\x1b[31m%s\x1b[0m", "DATABASE_OFFLINE // NEURAL_MOCK_MODE_ACTIVATED");
-        console.log("REASON:", err.message); // Log the actual error
+        console.log("REASON:", err.message);
         console.log("TIP: The project is now running in 'Simulation Mode'. Data will not persist after restart.");
     }
 };

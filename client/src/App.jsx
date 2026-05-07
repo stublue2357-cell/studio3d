@@ -57,7 +57,6 @@ function AppContent() {
     <div className="relative min-h-screen text-white bg-transparent font-['Plus_Jakarta_Sans'] select-none">
       
       <CyberBackground />
-      <Preloader />
       <CustomCursor />
       <Navbar />
       <CartDrawer />
@@ -159,6 +158,7 @@ function AppContent() {
 function App() {
   return (
     <CartProvider>
+      <Preloader />
       <Router>
         <AppContent />
       </Router>

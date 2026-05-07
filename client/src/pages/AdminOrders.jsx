@@ -257,9 +257,7 @@ const AdminOrders = ({ isEmbedded }) => {
                                         return <img src={actualData || '/placeholder_design.png'} className="w-full h-full object-cover" alt="Texture" />;
                                     })()}
                                  </div>
-                                 
-                                 {/* 3D Model View */}
-                                 <div className="flex-grow h-[220px] rounded-2xl overflow-hidden border border-white/10 bg-black/60 relative group">
+                                                              <div className="flex-grow h-[220px] rounded-2xl overflow-hidden border border-white/10 bg-black/60 relative group">
                                     <model-viewer
                                       src="/shirt_baked.glb"
                                       camera-controls
@@ -272,14 +270,21 @@ const AdminOrders = ({ isEmbedded }) => {
                                           const designData = item.customDesign?.data;
                                           const actualData = typeof designData === 'object' ? (designData.overlayImage || designData.aiImage) : designData;
 
-                                          if (typeof actualData === 'string' && actualData.startsWith('data:image')) {
+                                          // Improved Texture Logic: Support DataURL, HTTP URLs, and Local Paths
+                                          const isImage = typeof actualData === 'string' && (actualData.startsWith('data:image') || actualData.startsWith('http') || actualData.startsWith('/'));
+                                          
+                                          if (isImage) {
                                             mv.createTexture(actualData).then(tex => {
-                                              for (const mat of mv.model.materials) {
+                                              mv.model.materials.forEach(mat => {
+                                                // Apply to any material that supports texture
                                                 if (mat.pbrMetallicRoughness.baseColorTexture) {
                                                     mat.pbrMetallicRoughness.baseColorTexture.setTexture(tex);
+                                                } else {
+                                                    // Force apply if texture slot is missing (depends on model)
+                                                    try { mat.pbrMetallicRoughness.baseColorTexture.setTexture(tex); } catch(e){}
                                                 }
                                                 mat.pbrMetallicRoughness.setBaseColorFactor([1,1,1,1]);
-                                              }
+                                              });
                                             }).catch(e => console.error("TEX_ERROR", e));
                                           } else if (typeof actualData === 'string' && actualData.startsWith('#')) {
                                             // Apply solid color to 3D model
@@ -288,9 +293,9 @@ const AdminOrders = ({ isEmbedded }) => {
                                               const r = parseInt(hex.slice(1,3), 16) / 255 || 1;
                                               const g = parseInt(hex.slice(3,5), 16) / 255 || 1;
                                               const b = parseInt(hex.slice(5,7), 16) / 255 || 1;
-                                              for (const mat of mv.model.materials) {
+                                              mv.model.materials.forEach(mat => {
                                                 mat.pbrMetallicRoughness.setBaseColorFactor([r, g, b, 1]);
-                                              }
+                                              });
                                             } catch (e) {
                                               console.error("COLOR_PARSE_ERROR", e);
                                             }

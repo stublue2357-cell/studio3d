@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const AIChatbot = ({ onGenerate }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'ai', text: 'Welcome to the Design Laboratory. I am your Neural Concierge. Need inspiration?' }
+    { role: 'ai', text: 'Welcome to the Design Studio. I am your Design Assistant. Need inspiration?' }
   ]);
   const [input, setInput] = useState('');
 
@@ -19,7 +19,7 @@ const AIChatbot = ({ onGenerate }) => {
     setTimeout(() => {
       setMessages([...newMessages, { 
         role: 'ai', 
-        text: `Neural analysis complete. Based on "${input}", I recommend a Cyber-Modern aesthetic. Should I generate a render for you?`,
+        text: `Analysis complete. Based on "${input}", I recommend a modern streetwear look. Should I generate a design for you?`,
         canGenerate: true,
         suggestion: `High-fidelity ${input}, futuristic streetwear aesthetic, 8k, ultra-detailed`
       }]);
@@ -62,7 +62,7 @@ const AIChatbot = ({ onGenerate }) => {
                           onClick={() => onGenerate(msg.suggestion)}
                           className="block mt-4 text-[9px] font-black uppercase tracking-widest text-cyan-400 hover:text-white transition-all underline"
                         >
-                          Initialize Synth -&gt;
+                          Start Designing -&gt;
                         </button>
                       )}
                     </div>
@@ -76,7 +76,7 @@ const AIChatbot = ({ onGenerate }) => {
                  value={input}
                  onChange={(e) => setInput(e.target.value)}
                  onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                 placeholder="Communicate..." 
+                 placeholder="Ask me anything..." 
                  className="flex-1 bg-white/5 border border-white/10 px-4 py-3 rounded-xl outline-none focus:border-cyan-500 text-[11px] text-white placeholder:text-slate-600"
                />
                <button onClick={handleSend} className="bg-white text-black px-4 py-3 rounded-xl hover:bg-cyan-500 hover:text-white transition-all">
@@ -100,3 +100,4 @@ const AIChatbot = ({ onGenerate }) => {
 };
 
 export default AIChatbot;
+

@@ -39,7 +39,7 @@ const Products = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-12 md:mb-16 flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
           <div className="w-full">
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-black italic uppercase tracking-tighter text-white">
-              Cloth Sample <GlitchText text="Vault" className="text-indigo-400 drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+              Cloth Sample <GlitchText text="Catalog" className="text-indigo-400 drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
             </h1>
             <div className="flex gap-2 md:gap-4 mt-6 overflow-x-auto pb-4 md:pb-0 scrollbar-hide no-scrollbar">
               {['All', 'Designer', 'Plain'].map(cat => (
@@ -53,7 +53,7 @@ const Products = () => {
             </div>
           </div>
           <div className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-6 py-3 rounded-full border border-indigo-500/20 whitespace-nowrap">
-            Live Database Connected
+            Live Inventory
           </div>
         </motion.div>
 
@@ -61,13 +61,13 @@ const Products = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center h-[40vh] space-y-4">
             <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
-            <p className="text-slate-500 text-[10px] uppercase tracking-[0.4em] font-bold animate-pulse">Extracting Core Metrics...</p>
+            <p className="text-slate-500 text-[10px] uppercase tracking-[0.4em] font-bold animate-pulse">Loading Products...</p>
           </div>
         ) : products.length === 0 ? (
           /* --- EMPTY STATE --- */
           <div className="flex flex-col items-center justify-center h-[40vh] bg-white/[0.02] border border-white/5 rounded-3xl">
             <span className="text-4xl mb-4">📭</span>
-            <p className="text-slate-500 text-[12px] uppercase tracking-[0.3em] font-bold">No Signals Detected in Mainframe</p>
+            <p className="text-slate-500 text-[12px] uppercase tracking-[0.3em] font-bold">No Products Found in Inventory</p>
           </div>
         ) : (
           /* --- PRODUCTS GRID --- */
@@ -88,7 +88,7 @@ const Products = () => {
                     {product.imageUrl ? (
                       <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out opacity-80 group-hover:opacity-100" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-700 text-xs tracking-widest uppercase">NO VISUAL DATA</div>
+                      <div className="w-full h-full flex items-center justify-center text-slate-700 text-xs tracking-widest uppercase">NO IMAGE</div>
                     )}
                     <div className="absolute top-4 left-4 px-4 py-1.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-[8px] font-black uppercase tracking-widest text-white">
                       {product.category}
@@ -117,15 +117,15 @@ const Products = () => {
                       onClick={() => addToCart(product)}
                       className="px-6 py-3 bg-white text-black text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-cyan-500 hover:text-white transition-all shadow-lg relative z-10"
                     >
-                      Add to Vault
+                      Add to Cart
                     </button>
                   </div>
                   <Link 
-                    to="/dashboard" 
+                    to="/studio" 
                     state={{ baseProduct: product }}
                     className="w-full py-3 bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest rounded-full text-center hover:bg-white/10 transition-all text-slate-400"
                   >
-                    Customize Design
+                    Design in AI Studio
                   </Link>
                 </div>
 

@@ -55,3 +55,4 @@ const CyberBackground = () => {
 };
 
 export default CyberBackground;
+

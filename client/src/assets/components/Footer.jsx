@@ -12,7 +12,7 @@ const Footer = () => {
       
       {/* Decorative Ghost Text */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 opacity-[0.015] text-[10vw] font-black italic pointer-events-none whitespace-nowrap overflow-hidden">
-        NEURAL SYNTHESIS 2026
+        AI Design Technology 2026
       </div>
 
       <div className="max-w-[1400px] mx-auto relative z-10 flex flex-col md:flex-row justify-between items-start gap-16">

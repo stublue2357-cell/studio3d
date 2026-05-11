@@ -39,7 +39,7 @@ const About = () => {
             </p>
           </div>
           <div className="mt-10 pt-6 border-t border-white/5">
-            <span className="text-[10px] font-black text-white italic uppercase tracking-tighter">Powered by Neural Synthesis</span>
+            <span className="text-[10px] font-black text-white italic uppercase tracking-tighter">Powered by AI Design Technology</span>
           </div>
         </motion.div>
 
@@ -73,7 +73,7 @@ const About = () => {
           <div className="space-y-8">
             <div className="group cursor-pointer">
               <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest block mb-2 group-hover:text-indigo-400 transition-colors">Direct Signal (Email)</span>
-              <p className="text-[12px] font-bold text-white tracking-[0.1em]">support@studio3d.ai</p>
+              <p className="text-[12px] font-bold text-white tracking-[0.1em]">stublue2357@gmail.com</p>
             </div>
 
             <div className="group cursor-pointer">

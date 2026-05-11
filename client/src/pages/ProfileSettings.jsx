@@ -58,7 +58,7 @@ const ProfileSettings = () => {
         
         {/* Name Update */}
         <form onSubmit={handleUpdateName} className="p-8 rounded-[2rem] bg-white/[0.03] border border-white/5 space-y-6">
-          <h4 className="text-[11px] font-black uppercase tracking-widest text-indigo-400">Identity Synthesis</h4>
+          <h4 className="text-[11px] font-black uppercase tracking-widest text-indigo-400">Profile Info</h4>
           <div className="space-y-2">
             <label className="text-[8px] uppercase tracking-[0.3em] text-slate-600 font-black pl-2">Full Name</label>
             <input 
@@ -134,3 +134,4 @@ const ProfileSettings = () => {
 };
 
 export default ProfileSettings;
+

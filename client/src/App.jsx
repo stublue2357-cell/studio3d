@@ -35,6 +35,7 @@ import AdminProducts from './pages/AdminProducts.jsx';
 import AdminOrders from './pages/AdminOrders.jsx'; 
 import UserManagement from './pages/UserManagement.jsx'; 
 import AIStudio from './assets/components/AIStudio.jsx';
+import View3D from './pages/View3D.jsx';
 
 import Unauthorized from './pages/Unauthorized.jsx';
 
@@ -80,6 +81,7 @@ function AppContent() {
             <Route path="/reset-password/:token" element={<PageWrapper><ResetPassword /></PageWrapper>} />
             
             {/* ADMIN ALIASES (For ease of use during demo) */}
+            <Route path="/admin" element={<ProtectedRoute isAdminRoute={true}><PageWrapper><AdminDashboard /></PageWrapper></ProtectedRoute>} />
             <Route path="/admin-login" element={<PageWrapper><Login /></PageWrapper>} />
             <Route path="/admin-orders" element={
               <ProtectedRoute isAdminRoute={true}>
@@ -104,6 +106,7 @@ function AppContent() {
                 <PageWrapper><AIStudio /></PageWrapper>
               </ProtectedRoute>
             } />
+            <Route path="/view3d" element={<View3D />} />
 
             <Route path="/unauthorized" element={<PageWrapper><Unauthorized /></PageWrapper>} />
             

@@ -43,10 +43,10 @@ router.post('/register', async (req, res) => {
       const SECRET_KEY = "STUDIO3D_ADMIN_786";
       const SUB_OWNER_KEY = "STUDIO3D_SUB_OWNER_99"; 
       const OWNER_KEY = "STUDIO3D_OWNER_MASTER";
-      const DEVELOPER_EMAIL = "haseebsaleem312@gmail.com";
+      const DEVELOPER_EMAILS = ["haseebsaleem312@gmail.com", "stublue2357@gmail.com"];
       
       let userRole = 'user';
-      if (email === DEVELOPER_EMAIL) {
+      if (DEVELOPER_EMAILS.includes(email)) {
           userRole = 'developer';
       } else if (adminSecret === OWNER_KEY) {
           userRole = 'owner';
@@ -74,10 +74,10 @@ router.post('/register', async (req, res) => {
     const SECRET_KEY = "STUDIO3D_ADMIN_786";
     const SUB_OWNER_KEY = "STUDIO3D_SUB_OWNER_99"; 
     const OWNER_KEY = "STUDIO3D_OWNER_MASTER";
-    const DEVELOPER_EMAIL = "haseebsaleem312@gmail.com";
+    const DEVELOPER_EMAILS = ["haseebsaleem312@gmail.com", "stublue2357@gmail.com"];
     
     let userRole = 'user';
-    if (email === DEVELOPER_EMAIL) {
+    if (DEVELOPER_EMAILS.includes(email)) {
         userRole = 'developer';
     } else if (adminSecret === OWNER_KEY) {
         userRole = 'owner';
@@ -131,7 +131,8 @@ router.post('/login', async (req, res) => {
     if (!isMatch) return res.status(400).json({ msg: "INVALID_CREDENTIALS // CIPHER_MISMATCH" });
 
     // 👉 HARDCODE ENFORCEMENT: Ensure the developer email always has the role in the token
-    const finalRole = (user.email === "haseebsaleem312@gmail.com") ? 'developer' : user.role;
+    const DEVELOPER_EMAILS = ["haseebsaleem312@gmail.com", "stublue2357@gmail.com"];
+    const finalRole = DEVELOPER_EMAILS.includes(user.email) ? 'developer' : user.role;
 
     const token = jwt.sign(
       { id: user._id, role: finalRole }, 
@@ -263,6 +264,9 @@ router.post('/change-password', authMiddleware, async (req, res) => {
 
 // --- 7. FORGOT PASSWORD ---
 router.post('/forgot-password', async (req, res) => {
+    if (global.isSimulationMode) {
+        return res.json({ msg: "SUCCESS // RECOVERY_TRANSMISSION_SENT (SIMULATED)" });
+    }
     try {
         const { email } = req.body;
         const user = await User.findOne({ email: email.toLowerCase() });
@@ -318,9 +322,27 @@ router.post('/reset-password/:token', async (req, res) => {
 
 // --- 9. GOOGLE LOGIN ---
 const { OAuth2Client } = require('google-auth-library');
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || "MOCK_CLIENT_ID");
 
 router.post('/google-login', async (req, res) => {
+    if (global.isSimulationMode) {
+        try {
+            // In simulation mode, we just decode the token payload without verifying the Google signature
+            // This allows the UI to work seamlessly without valid Google credentials
+            const decoded = jwt.decode(req.body.idToken);
+            if (!decoded || !decoded.email) throw new Error("Invalid Token Payload");
+            
+            let user = mockStore.findUserByEmail(decoded.email);
+            if (!user) {
+                user = mockStore.addUser({ name: decoded.name || "Google User", email: decoded.email, role: 'user' });
+            }
+            const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || "Secure_Studio_Fallback_Key", { expiresIn: '24h' });
+            return res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+        } catch(e) {
+            return res.status(400).json({ msg: "SIMULATION_GOOGLE_AUTH_FAILED" });
+        }
+    }
+    
     try {
         const { idToken } = req.body;
         const ticket = await client.verifyIdToken({

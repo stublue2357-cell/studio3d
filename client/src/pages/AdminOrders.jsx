@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAllOrdersAdmin, updateOrderStatus } from '../api';
-import '@google/model-viewer';
+
+// NOTE: @google/model-viewer was removed from this component because 
+// we now open 3D views in a dedicated full-screen tab instead of an embedded modal.
 
 const AdminOrders = ({ isEmbedded }) => {
   const [orders, setOrders] = useState([]);
@@ -12,15 +14,45 @@ const AdminOrders = ({ isEmbedded }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
 
+  // ====================================================================
+  // 🔍 3D VIEWER HANDLER: Opens the AI generated design in a new tab
+  // ====================================================================
+  const handleOpen3DView = (item) => {
+      const designData = item.customDesign?.data;
+      
+      // Determine if the design data is a JSON object or a raw string
+      const actualData = typeof designData === 'object' ? (designData.overlayImage || designData.aiImage) : designData;
+      
+      // Separate pure color codes (hex) from image URLs/base64 strings
+      const parsedData = {
+          aiTexture: typeof actualData === 'string' && actualData.startsWith('#') ? actualData : null,
+          overlayTexture: typeof actualData === 'string' && actualData.startsWith('#') ? null : actualData
+      };
+      
+      // Store the parsed design temporarily in localStorage so the new tab (/view3d) can read it
+      localStorage.setItem('view3d_design_data', JSON.stringify(parsedData));
+      
+      // Identify which base 3D model to load (e.g., shirt, hoodie)
+      const modelId = item.product?.glbModel || item.product?.name?.toLowerCase().replace(/[\s-]/g, '_') || 'shirt_baked';
+      
+      // Open the dedicated 3D viewer route in a new tab
+      window.open(`/view3d?model=${modelId}&label=${encodeURIComponent(item.product?.name || '3D Design')}`, '_blank');
+  };
+
   useEffect(() => { fetchOrders(); }, []);
 
+  // ====================================================================
+  // 📡 FETCH ORDERS: Retrieves all orders from the backend API
+  // ====================================================================
   const fetchOrders = async () => {
     try {
       const token = localStorage.getItem('token');
       const { data } = await getAllOrdersAdmin(token);
+      
+      // Ensure data is always an array to prevent .map() crashes on the frontend
       setOrders(Array.isArray(data) ? data : []);
     } catch (err) { 
-      console.error(err); 
+      console.error("Error fetching orders:", err); 
       setOrders([]);
     }
     finally { setLoading(false); }
@@ -35,12 +67,16 @@ const AdminOrders = ({ isEmbedded }) => {
       
       await updateOrderStatus(id, payload, token);
       fetchOrders();
-    } catch (err) { alert("PROTOCOL_ERROR"); }
+    } catch (err) { 
+      const errorMsg = err.response?.data?.msg || "PROTOCOL_ERROR";
+      alert(errorMsg); 
+    }
   };
 
   const handleClaim = async (id) => {
     try {
       const token = localStorage.getItem('token');
+      const userStr = localStorage.getItem('user');
       let user = null;
       try {
         user = userStr ? JSON.parse(userStr) : null;
@@ -56,7 +92,9 @@ const AdminOrders = ({ isEmbedded }) => {
     } catch (err) { alert("CLAIM_ERROR // LINK_FAILED"); }
   };
 
-  // 👉 Invoice Open Logic
+  // ====================================================================
+  // ⚙️ INVOICE MODAL LOGIC: Opens the specific order details
+  // ====================================================================
   const openInvoice = (order) => {
     setSelectedOrder(order);
     setIsModalOpen(true);
@@ -240,72 +278,19 @@ const AdminOrders = ({ isEmbedded }) => {
                           {/* --- CUSTOM DESIGN PREVIEW (3D VIEW) --- */}
                           {item.customDesign?.data && (
                             <div className="mt-4 pt-4 border-t border-white/5">
-                               <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                 <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
-                                 Live_Neural_3D_Preview ({item.customDesign?.type || 'STANDARD'})
-                               </p>
-                               <div className="flex flex-col md:flex-row gap-6">
-                                 {/* Flat Texture / Color View */}
-                                 <div className="aspect-square w-full max-w-[150px] rounded-2xl overflow-hidden border border-white/10 bg-black/40 flex items-center justify-center">
-                                    {(() => {
-                                        const designData = item.customDesign?.data;
-                                        const actualData = typeof designData === 'object' ? (designData.overlayImage || designData.aiImage) : designData;
-                                        
-                                        if (typeof actualData === 'string' && actualData.startsWith('#')) {
-                                            return <div className="w-full h-full" style={{ backgroundColor: actualData }} />;
-                                        }
-                                        return <img src={actualData || '/placeholder_design.png'} className="w-full h-full object-cover" alt="Texture" />;
-                                    })()}
-                                 </div>
-                                                              <div className="flex-grow h-[220px] rounded-2xl overflow-hidden border border-white/10 bg-black/60 relative group">
-                                    <model-viewer
-                                      src="/shirt_baked.glb"
-                                      camera-controls
-                                      auto-rotate
-                                      shadow-intensity="1"
-                                      style={{ width: '100%', height: '100%' }}
-                                      onLoad={(e) => {
-                                        const mv = e.target;
-                                        if (mv.model) {
-                                          const designData = item.customDesign?.data;
-                                          const actualData = typeof designData === 'object' ? (designData.overlayImage || designData.aiImage) : designData;
-
-                                          // Improved Texture Logic: Support DataURL, HTTP URLs, and Local Paths
-                                          const isImage = typeof actualData === 'string' && (actualData.startsWith('data:image') || actualData.startsWith('http') || actualData.startsWith('/'));
-                                          
-                                          if (isImage) {
-                                            mv.createTexture(actualData).then(tex => {
-                                              mv.model.materials.forEach(mat => {
-                                                // Apply to any material that supports texture
-                                                if (mat.pbrMetallicRoughness.baseColorTexture) {
-                                                    mat.pbrMetallicRoughness.baseColorTexture.setTexture(tex);
-                                                } else {
-                                                    // Force apply if texture slot is missing (depends on model)
-                                                    try { mat.pbrMetallicRoughness.baseColorTexture.setTexture(tex); } catch(e){}
-                                                }
-                                                mat.pbrMetallicRoughness.setBaseColorFactor([1,1,1,1]);
-                                              });
-                                            }).catch(e => console.error("TEX_ERROR", e));
-                                          } else if (typeof actualData === 'string' && actualData.startsWith('#')) {
-                                            // Apply solid color to 3D model
-                                            const hex = actualData;
-                                            try {
-                                              const r = parseInt(hex.slice(1,3), 16) / 255 || 1;
-                                              const g = parseInt(hex.slice(3,5), 16) / 255 || 1;
-                                              const b = parseInt(hex.slice(5,7), 16) / 255 || 1;
-                                              mv.model.materials.forEach(mat => {
-                                                mat.pbrMetallicRoughness.setBaseColorFactor([r, g, b, 1]);
-                                              });
-                                            } catch (e) {
-                                              console.error("COLOR_PARSE_ERROR", e);
-                                            }
-                                          }
-                                        }
-                                      }}
-                                    />
-                                    <div className="absolute top-2 right-2 text-[6px] font-black uppercase text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 px-2 py-1 rounded">Interactive_Node</div>
-                                 </div>
+                               <div className="flex justify-between items-center mb-3">
+                                 <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                                   <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+                                   Live_Neural_3D_Preview ({item.customDesign?.type || 'STANDARD'})
+                                 </p>
+                                 <button 
+                                    onClick={() => handleOpen3DView(item)}
+                                    className="px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600 hover:text-white border border-indigo-500/50 text-[8px] font-black text-indigo-400 uppercase tracking-widest rounded-lg transition-all"
+                                 >
+                                    Open Full 3D Viewer ↗
+                                 </button>
                                </div>
+
                             </div>
                           )}
                     </div>

@@ -9,7 +9,7 @@ import { getMyOrders, getMyActivity, getSessions } from '../api';
 const OrderHistory = ({ orders, loading, onOpenInvoice }) => (
   <div className="space-y-6 animate-in fade-in duration-500">
     <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
-      <h3 className="text-xl font-black italic uppercase text-white tracking-tighter">Transmission <span className="text-blue-500">History</span></h3>
+      <h3 className="text-xl font-black italic uppercase text-white tracking-tighter">Order <span className="text-blue-500">History</span></h3>
     </div>
 
     {loading ? (
@@ -56,6 +56,19 @@ const OrderHistory = ({ orders, loading, onOpenInvoice }) => (
                 >
                   Details
                 </button>
+                {order.status === 'Review' && (
+                  <button 
+                    onClick={() => {
+                      if(window.confirm("Are you sure you want to cancel this order?")) {
+                        // In simulation mode we just alert, in real we would call API
+                        alert("Cancellation Request Sent. Admin will verify shortly.");
+                      }
+                    }}
+                    className="px-5 py-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-[9px] font-black uppercase text-rose-500 hover:bg-rose-500 hover:text-white transition-all"
+                  >
+                    Cancel
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>
@@ -70,7 +83,7 @@ const OrderHistory = ({ orders, loading, onOpenInvoice }) => (
 const ActivityLog = ({ activities, loading }) => (
   <div className="space-y-6 animate-in fade-in duration-500">
     <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
-      <h3 className="text-xl font-black italic uppercase text-white tracking-tighter">Signal <span className="text-blue-500">Log</span></h3>
+      <h3 className="text-xl font-black italic uppercase text-white tracking-tighter">Activity <span className="text-blue-500">Log</span></h3>
     </div>
 
     {loading ? (
@@ -105,7 +118,7 @@ const ActivityLog = ({ activities, loading }) => (
 const BillingSettings = () => (
   <div className="max-w-2xl space-y-8 animate-in fade-in duration-500">
     <div className="mb-8 border-b border-white/5 pb-4">
-      <h3 className="text-2xl font-black italic uppercase text-white">Shipping <span className="text-blue-500">Protocol</span></h3>
+      <h3 className="text-2xl font-black italic uppercase text-white">Shipping <span className="text-blue-500">Address</span></h3>
     </div>
     <div className="space-y-6">
       <textarea className="w-full h-32 bg-white/5 border border-white/10 p-5 rounded-2xl text-white text-xs outline-none focus:border-blue-500 resize-none" placeholder="Enter Full Destination Address..." />
@@ -119,7 +132,7 @@ const BillingSettings = () => (
 const NeuralVault = ({ sessions, loading }) => (
   <div className="space-y-6 animate-in fade-in duration-500">
     <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
-      <h3 className="text-xl font-black italic uppercase text-white tracking-tighter">Neural <span className="text-blue-500">Vault</span></h3>
+      <h3 className="text-xl font-black italic uppercase text-white tracking-tighter">My <span className="text-blue-500">Designs</span></h3>
     </div>
 
     {loading ? (
@@ -156,6 +169,23 @@ const NeuralVault = ({ sessions, loading }) => (
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('orders'); 
+  
+  const handleOpen3DView = (item) => {
+      const designData = item.customDesign?.data;
+      const actualData = typeof designData === 'object' ? (designData.overlayImage || designData.aiImage) : designData;
+      
+      const parsedData = {
+          aiTexture: typeof actualData === 'string' && actualData.startsWith('#') ? actualData : null,
+          overlayTexture: typeof actualData === 'string' && actualData.startsWith('#') ? null : actualData,
+          partColors: typeof designData === 'object' ? designData.partColors : {}
+      };
+      
+      localStorage.setItem('view3d_design_data', JSON.stringify(parsedData));
+      
+      const modelId = item.product?.glbModel || item.product?.name?.toLowerCase().replace(/[\s-]/g, '_') || 'shirt_baked';
+      window.open(`/view3d?model=${modelId}&label=${encodeURIComponent(item.product?.name || '3D Design')}`, '_blank');
+  };
+
   const [orders, setOrders] = useState([]);
   const [activities, setActivities] = useState([]);
   const [sessions, setSessions] = useState([]);
@@ -196,12 +226,12 @@ const Dashboard = () => {
 
   const sidebarTabs = [
     { id: 'lab', label: 'Design Lab', section: 'Creation' },
-    { id: 'drafts', label: 'Neural Drafts', section: 'Creation' },
-    { id: 'collection', label: 'Vault', section: 'Creation' },
-    { id: 'orders', label: 'History', section: 'Account' },
-    { id: 'activity', label: 'Signal Log', section: 'Account' },
+    { id: 'drafts', label: 'My Designs', section: 'Creation' },
+    { id: 'collection', label: 'Product Store', section: 'Creation' },
+    { id: 'orders', label: 'Order History', section: 'Account' },
+    { id: 'activity', label: 'Activity Log', section: 'Account' },
     { id: 'profile', label: 'Security & Profile', section: 'Account' },
-    { id: 'billing', label: 'Destination', section: 'Account' },
+    { id: 'billing', label: 'Shipping Address', section: 'Account' },
   ];
 
   return (
@@ -252,7 +282,7 @@ const Dashboard = () => {
           <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-black/90 backdrop-blur-3xl">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-3xl bg-[#050507] border border-white/10 p-12 rounded-[3rem] shadow-2xl relative overflow-hidden">
               <div className="flex justify-between items-center mb-10">
-                <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-none">Order <span className="text-blue-500">Protocol</span></h3>
+                <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-none">Order <span className="text-blue-500">Details</span></h3>
                 <button onClick={() => setIsInvoiceOpen(false)} className="text-slate-500 hover:text-white text-4xl">&times;</button>
               </div>
 
@@ -269,12 +299,28 @@ const Dashboard = () => {
 
               <div className="space-y-4 max-h-[200px] overflow-y-auto pr-2 mb-8 custom-scrollbar">
                 {(selectedOrder?.products || []).map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between bg-white/[0.03] p-4 rounded-xl border border-white/5">
-                    <div className="flex items-center gap-4">
-                      <img src={item.product?.imageUrl} className="w-10 h-10 rounded-lg object-cover" alt="" />
-                      <span className="text-white text-[10px] font-black uppercase">{item.product?.name}</span>
+                  <div key={idx} className="flex flex-col gap-3 bg-white/[0.03] p-4 rounded-xl border border-white/5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <img src={item.product?.imageUrl} className="w-10 h-10 rounded-lg object-cover" alt="" />
+                        <span className="text-white text-[10px] font-black uppercase">{item.product?.name}</span>
+                      </div>
+                      <span className="text-slate-500 text-[9px]">Qty: {item.quantity || 1}</span>
                     </div>
-                    <span className="text-slate-500 text-[9px]">Qty: {item.quantity || 1}</span>
+                    {item.customDesign?.data && (
+                      <div className="flex justify-between items-center border-t border-white/5 pt-3">
+                         <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                           <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+                           Custom Design Attached
+                         </span>
+                         <button 
+                            onClick={() => handleOpen3DView(item)}
+                            className="px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600 hover:text-white border border-indigo-500/50 text-[8px] font-black text-indigo-400 uppercase tracking-widest rounded-lg transition-all"
+                         >
+                            View Full 3D Design ↗
+                         </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -307,7 +353,7 @@ const Dashboard = () => {
               </div>
 
               <button onClick={() => window.print()} className="w-full py-5 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.4em] hover:bg-blue-600 hover:text-white transition-all">
-                Download Invoice Protocol
+                Download Receipt / Invoice
               </button>
             </motion.div>
           </div>

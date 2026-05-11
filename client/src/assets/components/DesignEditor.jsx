@@ -35,7 +35,9 @@ const DesignEditor = ({ onExport, activePanel, initialState, onStateChange }) =>
       const imageUrl = e.detail;
       
       const imgElement = new Image();
-      imgElement.crossOrigin = "anonymous";
+      if (!imageUrl.startsWith('data:')) {
+        imgElement.crossOrigin = "anonymous";
+      }
       imgElement.src = imageUrl;
       imgElement.onload = () => {
         const ImageClass = fabric.Image || fabric.FabricImage;
@@ -50,6 +52,9 @@ const DesignEditor = ({ onExport, activePanel, initialState, onStateChange }) =>
         // Trigger export
         const dataUrl = fabricCanvas.toDataURL({ format: 'png', quality: 1 });
         onExport(dataUrl);
+      };
+      imgElement.onerror = (err) => {
+        console.error("Failed to load AI image into Fabric Canvas:", err);
       };
     };
 
@@ -73,7 +78,7 @@ const DesignEditor = ({ onExport, activePanel, initialState, onStateChange }) =>
     document.head.appendChild(link);
 
     const canvas = new fabric.Canvas(canvasRef.current, {
-      width: 400,
+      width: 300,
       height: 400,
       backgroundColor: 'transparent',
       preserveObjectStacking: true,
@@ -795,10 +800,86 @@ const DesignEditor = ({ onExport, activePanel, initialState, onStateChange }) =>
                 </div>
               </div>
 
+              <div className="pt-6 border-t border-white/5">
+                <button 
+                  onClick={() => {
+                    const activeObject = fabricCanvas?.getActiveObject();
+                    if (activeObject) {
+                      fabricCanvas.remove(activeObject);
+                      fabricCanvas.discardActiveObject();
+                      fabricCanvas.renderAll();
+                    }
+                  }}
+                  className="w-full py-4 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-xl text-rose-500 text-[10px] font-black uppercase tracking-widest transition-all"
+                >
+                  🗑️ Remove Element
+                </button>
+              </div>
+
               <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed mt-4">
                 Note: Use the "Colors" panel to change the line color while the line is selected.
               </p>
             </>
+          )}
+
+          {activePanel === 'colors' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-left-4 duration-300">
+              <div>
+                <h3 className="text-white font-bold tracking-wider uppercase text-xs mb-2">Material Customization</h3>
+                <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest">Adjust 3D part colors and finishes</p>
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-indigo-400 flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,1)]" />
+                  Select Color
+                </label>
+                <div className="grid grid-cols-5 gap-3">
+                  {['#ffffff', '#000000', '#4f46e5', '#ef4444', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#6366f1', '#14b8a6', '#334155', '#71717a', '#fde047', '#fb923c', '#4ade80'].map(c => (
+                    <button 
+                      key={c} 
+                      onClick={() => {
+                        // 1. Update 3D Model Color via Event
+                        window.dispatchEvent(new CustomEvent('FABRIC_COLOR_SYNC', { detail: c }));
+                        
+                        // 2. If a canvas object is selected, update it too
+                        const activeObject = fabricCanvas?.getActiveObject();
+                        if (activeObject) {
+                          activeObject.set('fill', c);
+                          fabricCanvas.renderAll();
+                        }
+                      }}
+                      className="w-full aspect-square rounded-lg border border-white/10 hover:scale-110 transition-transform shadow-lg"
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                  
+                  {/* Custom Color Picker */}
+                  <div className="relative group w-full aspect-square rounded-lg border border-white/10 overflow-hidden bg-gradient-to-tr from-rose-500 via-indigo-500 to-emerald-500 flex items-center justify-center cursor-pointer">
+                    <input 
+                      type="color" 
+                      onChange={(e) => {
+                        const c = e.target.value;
+                        window.dispatchEvent(new CustomEvent('FABRIC_COLOR_SYNC', { detail: c }));
+                        const activeObject = fabricCanvas?.getActiveObject();
+                        if (activeObject) {
+                          activeObject.set('fill', c);
+                          fabricCanvas.renderAll();
+                        }
+                      }}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    />
+                    <span className="text-white text-[10px] font-black">#</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-indigo-600/10 border border-indigo-500/20">
+                 <p className="text-[8px] text-indigo-400 font-black uppercase tracking-widest leading-relaxed">
+                   Tip: Click a specific part of the clothing in the 3D view to change its color individually.
+                 </p>
+              </div>
+            </div>
           )}
 
           {activePanel === 'layers' && (
@@ -858,7 +939,7 @@ const DesignEditor = ({ onExport, activePanel, initialState, onStateChange }) =>
 
       {/* PORTAL RENDER: This renders the canvas directly over the 3D Viewer in AIStudio */}
       {portalTarget && createPortal(
-        <div className={`relative w-[300px] h-[400px] mt-[-40px] transition-all ${['ai', 'text', 'uploads', 'layers', 'shapes'].includes(activePanel) ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+        <div className={`relative w-[300px] h-[400px] mt-[-40px] transition-all ${['ai', 'text', 'uploads', 'layers', 'shapes', 'colors', 'history'].includes(activePanel) ? 'pointer-events-auto' : 'pointer-events-none'}`}>
           <canvas ref={canvasRef} className="max-w-full h-auto" />
         </div>,
         portalTarget
@@ -868,3 +949,4 @@ const DesignEditor = ({ onExport, activePanel, initialState, onStateChange }) =>
 };
 
 export default DesignEditor;
+

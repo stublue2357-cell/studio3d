@@ -225,6 +225,8 @@ const DesignLab = () => {
 
   useEffect(() => {
     if (canvasElements.length === 0) return;
+    // Clear 3D texture on change to avoid 'double display' / ghosting
+    setModelTexture(null);
     const timer = setTimeout(() => handleSaveSession(true), 5000);
     return () => clearTimeout(timer);
   }, [canvasElements, color, apparel]);
@@ -451,7 +453,7 @@ const DesignLab = () => {
               {canvasElements.map(el => (
                 <motion.div 
                   key={el.id} drag dragConstraints={canvasRef} dragElastic={0} dragMomentum={false}
-                  onDragStart={() => setActiveElementId(el.id)}
+                  onDragStart={(e) => { e.stopPropagation(); setActiveElementId(el.id); }}
                   onClick={(e) => { e.stopPropagation(); setActiveElementId(el.id); }}
                   className={`absolute cursor-move origin-center ${activeElementId === el.id ? 'ring-1 ring-indigo-500 bg-indigo-500/10 z-50' : 'hover:ring-1 hover:ring-white/20 z-10'}`}
                   style={{ left: el.x, top: el.y, scale: el.scale || 1 }}
@@ -570,6 +572,16 @@ const DesignLab = () => {
                   )}
 
                   <button 
+                    onClick={() => {
+                      setCanvasElements(els => els.filter(el => el.id !== activeElementId));
+                      setActiveElementId(null);
+                    }}
+                    className="w-full py-4 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-xl text-rose-500 text-[9px] font-black uppercase tracking-widest transition-all mb-2"
+                  >
+                    🗑️ Remove Element
+                  </button>
+
+                  <button 
                     onClick={() => setActiveElementId(null)}
                     className="w-full py-4 bg-white/5 text-slate-400 rounded-xl text-[9px] font-black uppercase tracking-widest hover:text-white transition-all"
                   >
@@ -587,3 +599,4 @@ const DesignLab = () => {
 };
 
 export default DesignLab;
+

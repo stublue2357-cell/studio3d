@@ -62,24 +62,24 @@ const OrderSuccess = () => {
           Transaction Verified
         </span>
         <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase italic text-white mb-6 leading-none">
-          Synthesis <span className="text-emerald-400">Initiated</span>
+          Order <span className="text-emerald-400">Placed</span>
         </h2>
         
         <p className="text-slate-400 text-[11px] font-bold tracking-widest leading-relaxed max-w-md mx-auto mb-10 uppercase italic">
-          Your neural design parameters have been successfully transmitted to our production laboratory for fulfillment.
+          Your order has been successfully submitted. Please check your profile dashboard for real-time status updates and admin approval.
         </p>
 
         {/* Order Details Terminal Box */}
         <div className="bg-black/40 border border-white/5 rounded-2xl p-6 mb-10 inline-block text-left w-full max-w-sm mx-auto backdrop-blur-md">
           <div className="flex justify-between items-center border-b border-white/5 pb-4 mb-4">
-            <span className="text-slate-500 text-[9px] font-black uppercase tracking-[0.3em]">Order Protocol</span>
+            <span className="text-slate-500 text-[9px] font-black uppercase tracking-[0.3em]">Order Reference</span>
             <span className="text-white text-[10px] font-bold tracking-widest">{orderId}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-slate-500 text-[9px] font-black uppercase tracking-[0.3em]">Status</span>
             <span className="text-emerald-400 text-[9px] font-bold tracking-[0.2em] flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_5px_rgba(52,211,153,0.8)]" /> 
-              Queued for Production
+              Pending Review
             </span>
           </div>
         </div>
@@ -88,10 +88,10 @@ const OrderSuccess = () => {
         <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
           {/* 👉 Ye button ab live Dashboard (Vault) par jayega jahan order history hai */}
           <Link to="/dashboard" className="w-full md:w-auto px-10 py-5 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] transition-all bg-gradient-to-r from-emerald-600 to-teal-500 text-white hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] text-center">
-            Track in Vault
+            Track My Order
           </Link>
           <Link to="/products" className="w-full md:w-auto px-10 py-5 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] transition-all bg-white/[0.03] text-slate-300 border border-white/10 hover:bg-white/10 hover:text-white text-center">
-            Explore Archive
+            Continue Shopping
           </Link>
         </div>
 

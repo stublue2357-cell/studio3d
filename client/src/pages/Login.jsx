@@ -120,12 +120,12 @@ const Login = () => {
                 {isForgotMode ? 'RESET CIPHER' : (isLogin ? 'LOG INTO SYSTEM' : 'CREATE NEW NODE')}
               </h3>
             </div>
-            <button 
+            <div 
               onClick={() => { setIsForgotMode(false); setIsLogin(!isLogin); setMsg(""); }} 
-              className="text-[10px] font-black uppercase text-indigo-400 border border-indigo-400/30 px-6 py-2.5 rounded-full hover:bg-indigo-400/10 hover:border-indigo-400/60 transition-all"
+              className="text-[10px] font-black uppercase text-indigo-400 border border-indigo-400/30 px-6 py-2.5 rounded-full hover:bg-indigo-400/10 hover:border-indigo-400/60 transition-all cursor-pointer relative z-[999] inline-block text-center select-none"
             >
               {isLogin ? 'Request Access' : 'Return to Login'}
-            </button>
+            </div>
           </div>
 
           <form className="space-y-5" onSubmit={handleSubmit}>

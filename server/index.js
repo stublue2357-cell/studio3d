@@ -13,6 +13,9 @@ const sessionRoutes = require('./routes/sessions');
 const app = express();
 
 // --- GLOBAL SIMULATION MODE (Default: ON) ---
+// Simulation mode acts as a safety net. If the MongoDB connection fails (e.g., due to IP Whitelist issues
+// or bad internet), the backend automatically serves mock data from memory. This ensures the frontend UI 
+// never crashes during a presentation.
 global.isSimulationMode = true; 
 
 // --- MIDDLEWARE ---
@@ -30,7 +33,11 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/sessions', sessionRoutes);
 
-// --- NEURAL DATABASE MONITORING ---
+// ====================================================================
+// 🧠 DATABASE CONNECTION & NEURAL MONITORING LOGIC
+// ====================================================================
+// These event listeners automatically toggle Simulation Mode based on 
+// the active status of the MongoDB Atlas link.
 mongoose.connection.on('connected', () => {
     global.isSimulationMode = false;
     console.log("\x1b[32m%s\x1b[0m", "DATABASE_CONNECTED // SYNCHRONIZATION_COMPLETE");
@@ -56,6 +63,33 @@ const connectDB = async () => {
             bufferCommands: false, 
             autoIndex: false 
         });
+
+        // Seed data if DB is empty (ensures FYP demo works perfectly on live DB)
+        try {
+            const User = mongoose.models.User || require('./models/user');
+            const bcrypt = require('bcryptjs');
+            const adminExists = await User.findOne({ email: 'admin@studio3d.com' });
+            if (!adminExists) {
+                const hashedPassword = await bcrypt.hash('123456', 10);
+                await new User({ name: 'Studio Admin', email: 'admin@studio3d.com', password: hashedPassword, role: 'admin' }).save();
+                console.log("Seeded default admin (admin@studio3d.com / 123456)");
+            }
+            
+            const Product = mongoose.models.Product || require('./models/product');
+            const count = await Product.countDocuments();
+            if (count === 0) {
+                const mockStore = require('./utils/mockStore');
+                const products = mockStore.getProducts();
+                for (let p of products) {
+                    const { _id, ...rest } = p;
+                    await new Product(rest).save();
+                }
+                console.log("Seeded mock products to MongoDB");
+            }
+        } catch (seedErr) {
+            console.error("Auto-seeding failed:", seedErr.message);
+        }
+
     } catch (err) {
         global.isSimulationMode = true; 
         console.log("\x1b[31m%s\x1b[0m", "DATABASE_OFFLINE // NEURAL_MOCK_MODE_ACTIVATED");

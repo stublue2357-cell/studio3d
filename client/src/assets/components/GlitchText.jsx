@@ -46,3 +46,4 @@ const GlitchText = ({ text, className }) => {
 };
 
 export default GlitchText;
+

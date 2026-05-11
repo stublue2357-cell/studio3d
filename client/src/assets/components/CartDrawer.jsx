@@ -83,7 +83,7 @@ const CartDrawer = () => {
             {cartItems.length > 0 && (
               <div className="p-6 border-t border-white/5 bg-black/40 backdrop-blur-md">
                 <div className="flex justify-between items-center mb-6">
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Total Synthesis</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Total Price</span>
                   <span className="text-xl font-black text-white tracking-widest">${total}.00</span>
                 </div>
                 <Link 

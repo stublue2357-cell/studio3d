@@ -12,11 +12,17 @@ const AIStudio = () => {
   const baseProductFromState = location.state?.baseProduct;
 
   const [activeSidebarPanel, setActiveSidebarPanel] = useState('ai');
+  const [selectedPartName, setSelectedPartName] = useState(null);
   const [prompt, setPrompt] = useState('');
-  const [baseType, setBaseType] = useState(baseProductFromState?.name || 'Heavyweight Tee');
+  const [baseType, setBaseType] = useState(
+    baseProductFromState?.glbModel || 
+    baseProductFromState?.name?.toLowerCase().replace(/[\s-]/g, '_') || 
+    'shirt_baked'
+  );
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiImage, setAiImage] = useState(null);
   const [overlayImage, setOverlayImage] = useState(null);
+  const [partColors, setPartColors] = useState({});
 
   // --- NEW AI STATES ---
   const [activeAiSubTab, setActiveAiSubTab] = useState('visual'); // 'visual' | 'consultant'
@@ -28,8 +34,20 @@ const AIStudio = () => {
   const [sessionId, setSessionId] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [canvasState, setCanvasState] = useState(null);
-  const [lastSaved, setLastSaved] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const handlePartSelect = (e) => setSelectedPartName(e.detail);
+    const handlePartColorsUpdated = (e) => setPartColors(e.detail);
+    
+    window.addEventListener('3D_PART_SELECTED', handlePartSelect);
+    window.addEventListener('PART_COLORS_UPDATED', handlePartColorsUpdated);
+    
+    return () => {
+      window.removeEventListener('3D_PART_SELECTED', handlePartSelect);
+      window.removeEventListener('PART_COLORS_UPDATED', handlePartColorsUpdated);
+    };
+  }, []);
   const [chatHistory, setChatHistory] = useState([]);
 
   // Listen for prompt suggestions from the Global Chatbot
@@ -117,6 +135,7 @@ const AIStudio = () => {
         name: prompt ? prompt.substring(0, 20) + '...' : 'Untitled Design',
         canvasJSON: canvasState,
         fabricColor: '#ffffff', // Should be dynamic if AIStudio supports it
+        partColors,
         baseType,
         aiTexture: aiImage,
         chatHistory: chatHistory,
@@ -158,6 +177,7 @@ const AIStudio = () => {
            canvasJSON: canvasState,
            baseType,
            aiTexture: aiImage,
+           partColors,
            timestamp: Date.now()
         };
         localStorage.setItem('studio3d_draft_backup', JSON.stringify(backup));
@@ -196,6 +216,7 @@ const AIStudio = () => {
     setAiImage(session.aiTexture);
     setOverlayImage(session.thumbnail);
     setCanvasState(session.canvasJSON);
+    setPartColors(session.partColors || {});
     setChatHistory(session.chatHistory || []);
     setActiveSidebarPanel('ai');
   };
@@ -227,7 +248,11 @@ const AIStudio = () => {
 
     const customDesign = {
         type: "AI_CUSTOM_LAB",
-        data: overlayImage || aiImage || '#ffffff'
+        data: {
+           aiImage,
+           overlayImage,
+           partColors
+        }
     };
 
     addToCart(baseProduct, customDesign);
@@ -248,13 +273,13 @@ const AIStudio = () => {
       {/* SIDEBAR - Fixed Left on Desktop, Bottom on Mobile */}
       <div className="fixed bottom-0 left-0 right-0 h-20 md:h-auto md:w-20 bg-[#020204] border-t md:border-t-0 md:border-r border-white/5 flex flex-row md:flex-col items-center justify-around md:justify-start md:pt-[100px] md:pb-4 gap-2 z-[90] shrink-0 md:top-0 md:bottom-0">
           {[
-            { id: 'ai', icon: '🧠', label: 'AI Maker' },
-            { id: 'history', icon: '🕒', label: 'History' },
-            { id: 'text', icon: 'T', label: 'Text', font: 'serif' },
-            { id: 'shapes', icon: '━', label: 'Lines' },
-            { id: 'uploads', icon: '☁️', label: 'Upload' },
-            { id: 'layers', icon: '☰', label: 'Layers' },
-            { id: 'colors', icon: '🎨', label: 'Colors' }
+            { id: 'ai', label: 'AI Design', icon: '✨' },
+            { id: 'model', label: 'Clothing', icon: '👕' },
+            { id: 'text', label: 'Typography', icon: 'T' },
+            { id: 'shapes', label: 'Graphics', icon: '★' },
+            { id: 'colors', label: 'Materials', icon: '🎨' },
+            { id: 'history', label: 'Saved Designs', icon: '💾' },
+            { id: 'layers', icon: '☰', label: 'Layers' }
           ].map(item => (
            <button 
              key={item.id}
@@ -293,7 +318,7 @@ const AIStudio = () => {
                          onClick={() => setActiveAiSubTab('visual')}
                          className={`flex-1 py-3 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all ${activeAiSubTab === 'visual' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
                        >
-                         Visual Synthesizer
+                         AI Design Lab
                        </button>
                        <button 
                          onClick={() => setActiveAiSubTab('consultant')}
@@ -318,7 +343,7 @@ const AIStudio = () => {
                              <div className="space-y-2">
                                <label className="text-[8px] font-black uppercase tracking-[0.3em] text-cyan-500 flex items-center gap-2">
                                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
-                                 Synthetic Seeds
+                                 AI Design Ideas
                                </label>
                                <div className="flex flex-wrap gap-2">
                                  {["Cyberpunk Neon", "Minimal Abstract", "Retro Glitch"].map(s => (
@@ -334,7 +359,7 @@ const AIStudio = () => {
                              disabled={isGenerating || !prompt}
                              className={`w-full py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.4em] transition-all ${isGenerating || !prompt ? 'bg-slate-800 text-slate-500' : 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-2xl'}`}
                            >
-                             {isGenerating ? 'Synthesizing...' : 'Initialize Rendering'}
+                             {isGenerating ? 'Processing...' : 'Generate Design'}
                            </motion.button>
                         </motion.div>
                       ) : (
@@ -372,6 +397,51 @@ const AIStudio = () => {
                     </AnimatePresence>
                   </>
                )}
+
+                {activeSidebarPanel === 'model' && (
+                  <div className="space-y-8 animate-in fade-in slide-in-from-left-4 duration-300">
+                    <div>
+                      <h3 className="text-white font-bold tracking-wider uppercase text-xs mb-2">Select Clothing Type</h3>
+                      <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest">Switch between available 3D bases</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                      {[
+                        { id: 'female_cloth1', name: 'Female Outfit' },
+                        { id: 'plaid_jacket', name: 'Plaid Jacket' },
+                        { id: 'bomber_jacket', name: 'Bomber Jacket' },
+                        { id: 'pink_shirt', name: 'Pink Shirt' },
+                        { id: 'white_suit', name: 'White Suit' },
+                        { id: 'sweater_pack', name: 'Sweater Pack' },
+                        { id: 'black_suit', name: 'Black Suit' },
+                        { id: 'blue_hoodie_with_print', name: 'Blue Hoodie' },
+                        { id: 'pants_1', name: 'Pants' },
+                        { id: 'reality_texture_for_man_shirt', name: 'Classic Shirt' },
+                        { id: 'shirt_baked', name: 'Basic Tee' }
+                      ].map((m) => (
+                        <button
+                          key={m.id}
+                          onClick={() => {
+                            setBaseType(m.id);
+                            setAiImage(null);
+                          }}
+                          className={`group p-4 rounded-2xl border transition-all text-center flex flex-col items-center gap-3 ${
+                            baseType === m.id 
+                              ? 'bg-indigo-600/20 border-indigo-500 shadow-lg' 
+                              : 'bg-white/5 border-white/5 hover:border-white/20'
+                          }`}
+                        >
+                          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                            {m.id.includes('pants') ? '👖' : m.id.includes('suit') || m.id.includes('jacket') ? '🧥' : '👕'}
+                          </div>
+                          <span className={`text-[9px] font-black uppercase tracking-widest ${baseType === m.id ? 'text-white' : 'text-slate-500'}`}>
+                            {m.name}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {activeSidebarPanel === 'history' && (
                   <div className="space-y-6">
@@ -424,17 +494,36 @@ const AIStudio = () => {
         onExport={handleExport} 
         initialState={canvasState}
         onStateChange={handleStateChange}
+        onPartSelect={(name) => setSelectedPartName(name)}
       />
 
       {/* 3D Preview Section */}
       <div className="flex-grow relative bg-[#0a0a0e] flex items-center justify-center overflow-hidden z-10 min-h-[50vh] md:min-h-[calc(100vh-90px)]" onClick={() => window.innerWidth > 768 && setActiveSidebarPanel(null)}>
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
           
+          <div className="absolute top-10 left-1/2 -translate-x-1/2 z-[80] pointer-events-none">
+            <AnimatePresence>
+              {selectedPartName && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="bg-indigo-600/20 backdrop-blur-xl border border-indigo-500/30 px-6 py-2 rounded-full shadow-[0_0_20px_rgba(79,70,229,0.3)]"
+                >
+                  <span className="text-[10px] font-black text-white uppercase tracking-[0.3em]">
+                    Editing Part: <span className="text-indigo-400">{selectedPartName.replace(/_/g, ' ')}</span>
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           <div className="w-full h-full md:scale-110 lg:scale-100 transition-transform">
             <CanvasModel 
             baseType={baseType}
-            aiTexture={null} 
-            overlayTexture={overlayImage} 
+            aiTexture={aiImage} 
+            overlayTexture={['ai', 'text', 'uploads', 'layers', 'shapes', 'colors', 'history'].includes(activeSidebarPanel) ? null : overlayImage} 
+            initialPartColors={partColors}
           />
           </div>
           
@@ -486,7 +575,7 @@ const AIStudio = () => {
                       initial={{ width: "0%" }} animate={{ width: "100%" }} transition={{ duration: 3.5, ease: "easeInOut" }}
                     />
                   </div>
-                  <p className="text-[8px] md:text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] md:tracking-[0.5em] animate-pulse">Synthesizing...</p>
+                  <p className="text-[8px] md:text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] md:tracking-[0.5em] animate-pulse">Processing...</p>
                 </div>
               </motion.div>
             )}
@@ -499,3 +588,4 @@ const AIStudio = () => {
 };
 
 export default AIStudio;
+

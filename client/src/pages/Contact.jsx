@@ -29,7 +29,7 @@ const Contact = () => {
               <div>
                 <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] block mb-2">Primary Signal (Email)</span>
                 <p className="text-[13px] font-bold text-white tracking-widest uppercase hover:text-indigo-400 transition-colors cursor-pointer">
-                  support@studio3d.ai
+                  stublue2357@gmail.com
                 </p>
               </div>
 

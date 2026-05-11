@@ -93,7 +93,7 @@ const AdminProducts = ({ isEmbedded }) => {
           <p className="text-[8px] text-slate-600 font-black uppercase tracking-[0.4em]">ROOT_ACCESS // SIGNAL_CONTROL</p>
         </div>
         <button onClick={() => { setEditMode(false); setIsModalOpen(true); }} className="px-6 py-3 bg-indigo-600 text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-white hover:text-black transition-all shadow-lg">
-          + Synthesize Signal
+          + Add Product
         </button>
       </div>
 

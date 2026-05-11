@@ -34,11 +34,11 @@ const Navbar = () => {
   };
 
   const navLinks = [
-    { name: 'Index', path: '/' },
-    { name: 'Vault', path: '/products' },
-    { name: 'Protocol', path: '/about' },
-    { name: 'Signal', path: '/contact' },
-    { name: 'AI Designer', path: '/studio', isAI: true },
+    { name: 'Home', path: '/' },
+    { name: 'Products', path: '/products' },
+    { name: 'Our Method', path: '/about' },
+    { name: 'Contact Us', path: '/contact' },
+    { name: 'AI Studio', path: '/studio', isAI: true },
   ];
 
   return (
@@ -87,7 +87,7 @@ const Navbar = () => {
                     className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-all flex items-center gap-2"
                   >
                     <span className="hidden xl:inline">
-                      {role === 'user' ? 'My Node' : `${role.replace('-', ' ').toUpperCase()} Panel`}
+                      {role === 'user' ? 'My Profile' : `${role.replace('-', ' ').toUpperCase()} Panel`}
                     </span>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                   </Link>
@@ -96,12 +96,12 @@ const Navbar = () => {
                     onClick={handleLogout}
                     className="px-4 py-2 bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[8px] font-black uppercase tracking-widest rounded-full hover:bg-rose-500 hover:text-white transition-all"
                   >
-                    Terminate
+                    Logout
                   </button>
                 </>
               ) : (
                 <Link to="/login" className="px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-[9px] font-bold uppercase tracking-widest transition-all text-white">
-                  Initialize Access
+                  Login / Register
                 </Link>
               )}
             </div>
@@ -111,7 +111,7 @@ const Navbar = () => {
               onClick={() => setIsCartOpen(true)}
               className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:text-indigo-400 transition-colors text-white"
             >
-              Vault <span className="text-indigo-400">({cartItems?.length || 0})</span>
+              My Cart <span className="text-indigo-400">({cartItems?.length || 0})</span>
             </button>
 
             {/* Mobile Menu Toggle */}
@@ -147,7 +147,7 @@ const Navbar = () => {
             className="fixed inset-0 z-[95] bg-[#010413] pt-32 px-10 flex flex-col"
           >
             <div className="flex flex-col gap-8">
-              <span className="text-indigo-500 text-[10px] font-black uppercase tracking-[0.5em] mb-4">Neural Navigation</span>
+              <span className="text-indigo-500 text-[10px] font-black uppercase tracking-[0.5em] mb-4">Main Menu</span>
               {navLinks.map((link, idx) => (
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
@@ -170,7 +170,7 @@ const Navbar = () => {
             <div className="mt-auto pb-20 flex flex-col gap-6">
               <div className="h-px bg-white/5 w-full" />
               {!isLoggedIn ? (
-                <Link to="/login" className="text-xl font-bold uppercase tracking-widest text-indigo-400">Initialize Access</Link>
+                <Link to="/login" className="text-xl font-bold uppercase tracking-widest text-indigo-400">Login / Register</Link>
               ) : (
                 <div className="flex flex-col gap-6">
                   <Link 
@@ -179,7 +179,7 @@ const Navbar = () => {
                   >
                     Control Panel
                   </Link>
-                  <button onClick={handleLogout} className="text-left text-xl font-bold uppercase tracking-widest text-rose-500">Terminate Protocol</button>
+                  <button onClick={handleLogout} className="text-left text-xl font-bold uppercase tracking-widest text-rose-500">Logout</button>
                 </div>
               )}
             </div>

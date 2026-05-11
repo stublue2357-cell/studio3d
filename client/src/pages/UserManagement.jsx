@@ -32,13 +32,15 @@ const UserManagement = ({ isEmbedded = false }) => {
   const fetchUsers = async () => {
     try {
       const { data } = await getAllUsers(token);
-      setUsers(data);
+      setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("IDENTITY_READ_FAILED", err);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleRoleChange = async (userId, newRole) => {
     try {

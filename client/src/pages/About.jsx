@@ -78,7 +78,7 @@ const About = () => {
 
             <div className="group cursor-pointer">
               <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest block mb-2 group-hover:text-indigo-400 transition-colors">Neural Hub (Phone)</span>
-              <p className="text-[12px] font-bold text-white tracking-[0.1em]">+92 3XX XXXXXXX</p>
+              <p className="text-[12px] font-bold text-white tracking-[0.1em]">+92 321 2418340</p>
             </div>
 
             <div className="group cursor-pointer">

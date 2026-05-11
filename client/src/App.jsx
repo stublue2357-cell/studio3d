@@ -59,12 +59,17 @@ function AppContent() {
       
       <CyberBackground />
       <CustomCursor />
-      <Navbar />
-      <CartDrawer />
-      <AIChatbot onGenerate={(prompt) => {
-          // If on AI Studio page, trigger synthesis (In a real app, I'd use an event bus or context)
-          window.dispatchEvent(new CustomEvent('TRIGGER_AI_SYNTH', { detail: prompt }));
-      }} />
+      
+      {/* Hide global navigation/UI on full-screen viewer pages to prevent overlap */}
+      {location.pathname !== '/view3d' && (
+        <>
+          <Navbar />
+          <CartDrawer />
+          <AIChatbot onGenerate={(prompt) => {
+              window.dispatchEvent(new CustomEvent('TRIGGER_AI_SYNTH', { detail: prompt }));
+          }} />
+        </>
+      )}
 
       <main className="relative z-10 flex-grow flex flex-col">
         <AnimatePresence mode="wait">

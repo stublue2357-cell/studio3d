@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import Products from './Products.jsx'; 
 import ProfileSettings from './ProfileSettings';
 import DesignLab from './DesignLab.jsx';
+import Receipt from '../assets/components/Receipt.jsx';
 import { getMyOrders, getMyActivity, getSessions } from '../api';
 
 // --- MODULE 1: ORDER LOG (With Invoice Trigger) ---
@@ -129,7 +131,7 @@ const BillingSettings = () => (
 
 // --- MAIN DASHBOARD COMPONENT ---
 // --- MODULE 3: NEURAL VAULT (Draft Management) ---
-const NeuralVault = ({ sessions, loading }) => (
+const NeuralVault = ({ sessions, loading, navigate }) => (
   <div className="space-y-6 animate-in fade-in duration-500">
     <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
       <h3 className="text-xl font-black italic uppercase text-white tracking-tighter">My <span className="text-blue-500">Designs</span></h3>
@@ -157,7 +159,10 @@ const NeuralVault = ({ sessions, loading }) => (
                <p className="text-[8px] text-slate-500 uppercase font-bold tracking-widest mt-0.5">{session.baseType || "Apparel"} Protocol</p>
                <span className="text-[7px] text-slate-600 block mt-1">{new Date(session.updatedAt).toLocaleString()}</span>
             </div>
-            <button className="px-4 py-2 bg-blue-600/10 border border-blue-500/30 rounded-lg text-[8px] font-black uppercase text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+            <button 
+              onClick={() => navigate('/studio', { state: { resumeSession: session } })}
+              className="px-4 py-2 bg-blue-600/10 border border-blue-500/30 rounded-lg text-[8px] font-black uppercase text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-all"
+            >
                RESUME
             </button>
           </motion.div>
@@ -168,7 +173,15 @@ const NeuralVault = ({ sessions, loading }) => (
 );
 
 const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState('orders'); 
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('drafts'); 
+  
+  useEffect(() => {
+    const role = localStorage.getItem('role');
+    if (['admin', 'developer', 'owner', 'sub-owner'].includes(role)) {
+      navigate('/admin', { replace: true });
+    }
+  }, [navigate]);
   
   const handleOpen3DView = (item) => {
       const designData = item.customDesign?.data;
@@ -225,7 +238,6 @@ const Dashboard = () => {
   };
 
   const sidebarTabs = [
-    { id: 'lab', label: 'Design Lab', section: 'Creation' },
     { id: 'drafts', label: 'My Designs', section: 'Creation' },
     { id: 'collection', label: 'Product Store', section: 'Creation' },
     { id: 'orders', label: 'Order History', section: 'Account' },
@@ -262,11 +274,10 @@ const Dashboard = () => {
         </div>
       </aside>
 
-      <main className={`flex-1 w-full bg-black/40 rounded-[3.5rem] border border-white/5 min-h-[75vh] backdrop-blur-md relative z-10 shadow-2xl overflow-hidden transition-all duration-500 ${activeTab === 'lab' ? 'p-0' : 'p-8 md:p-12'}`}>
+      <main className="flex-1 w-full bg-black/40 rounded-[3.5rem] border border-white/5 min-h-[75vh] backdrop-blur-md relative z-10 shadow-2xl overflow-hidden transition-all duration-500 p-8 md:p-12">
         <AnimatePresence mode="wait">
           <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="h-full">
-            {activeTab === 'lab' && <DesignLab />}
-            {activeTab === 'drafts' && <div className="p-8"><NeuralVault sessions={sessions} loading={sessionsLoading} /></div>}
+            {activeTab === 'drafts' && <div className="p-8"><NeuralVault sessions={sessions} loading={sessionsLoading} navigate={navigate} /></div>}
             {activeTab === 'collection' && <div className="p-8"><Products isDashboard={true} /></div>}
             {activeTab === 'orders' && <div className="p-8"><OrderHistory orders={orders} loading={loading} onOpenInvoice={openInvoice} /></div>}
             {activeTab === 'activity' && <div className="p-8"><ActivityLog activities={activities} loading={activityLoading} /></div>}
@@ -359,6 +370,9 @@ const Dashboard = () => {
           </div>
         )}
       </AnimatePresence>
+
+      {/* HIDDEN PRINTABLE RECEIPT */}
+      <Receipt order={selectedOrder} />
     </div>
   );
 };

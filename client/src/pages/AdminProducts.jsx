@@ -19,10 +19,14 @@ const AdminProducts = ({ isEmbedded }) => {
   const fetchProducts = async () => {
     try {
       const { data } = await getProducts();
-      setProducts(data);
-    } catch (error) { console.error("Sync Error:", error); }
+      setProducts(Array.isArray(data) ? data : []);
+    } catch (error) { 
+      console.error("Sync Error:", error); 
+      setProducts([]); // Fallback to empty
+    }
     finally { setLoading(false); }
   };
+
 
   const handleEdit = (p) => {
     setEditMode(true);
@@ -41,8 +45,13 @@ const AdminProducts = ({ isEmbedded }) => {
     try {
       const token = localStorage.getItem('token');
       const payload = { 
-        ...formData, 
+        name: formData.name,
         price: Number(formData.price), 
+        description: formData.longDesc.substring(0, 100) || formData.name, // Short description
+        longDescription: formData.longDesc,
+        category: formData.category,
+        imageUrl: formData.image,
+        modelUrl: formData.modelUrl,
         stock: Number(formData.stock),
         specs: formData.specs ? formData.specs.split(',').map(s => s.trim()) : []
       };
@@ -62,6 +71,19 @@ const AdminProducts = ({ isEmbedded }) => {
       setFormData({ name: '', price: '', category: 'Hoodies', stock: '', image: '', longDesc: '', specs: '', modelUrl: '' });
     }, 200); // Animation smooth karne ke liye
   };
+
+  const handlePurge = async (p) => {
+    try {
+      const token = localStorage.getItem('token');
+      await deleteProduct(p._id, token);
+      fetchProducts();
+    } catch (err) {
+      console.error("Purge Error:", err);
+    }
+  };
+
+  const role = localStorage.getItem('role') || 'admin'; // Fallback to admin if not set
+
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];

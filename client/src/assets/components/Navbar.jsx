@@ -14,7 +14,7 @@ const Navbar = () => {
   const role = localStorage.getItem('role');
   const isLoggedIn = !!token;
 
-  const { cartItems, setIsCartOpen } = useCart();
+  const { cartItems, setIsCartOpen, clearCart } = useCart();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -28,9 +28,9 @@ const Navbar = () => {
 
   // Logout Function
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    navigate('/login');
+    localStorage.clear(); // Clear everything
+    if (clearCart) clearCart();
+    window.location.href = '/login';
   };
 
   const navLinks = [
@@ -106,13 +106,16 @@ const Navbar = () => {
               )}
             </div>
 
-            {/* Vault Button */}
-            <button 
-              onClick={() => setIsCartOpen(true)}
-              className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:text-indigo-400 transition-colors text-white"
-            >
-              My Cart <span className="text-indigo-400">({cartItems?.length || 0})</span>
-            </button>
+            {/* Vault Button - Hidden for Admins/Staff and on Login/Register pages */}
+            {!['admin', 'developer', 'owner', 'sub-owner'].includes(role?.toLowerCase()) && 
+             !['/login', '/register'].includes(location.pathname) && (
+              <button 
+                onClick={() => setIsCartOpen(true)}
+                className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:text-indigo-400 transition-colors text-white"
+              >
+                My Cart <span className="text-indigo-400">({cartItems?.length || 0})</span>
+              </button>
+            )}
 
             {/* Mobile Menu Toggle */}
             <button 

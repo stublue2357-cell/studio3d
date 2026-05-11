@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { loginUser, registerUser, googleLogin, forgotPassword } from '../api'; 
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,6 +13,18 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    if (token) {
+      if (['admin', 'developer', 'owner', 'sub-owner'].includes(role)) {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
+    }
+  }, [navigate]);
 
   const handleAuthSuccess = (data) => {
     localStorage.setItem('token', data.token);
@@ -170,7 +182,7 @@ const Login = () => {
               <span className="relative z-10">{isLoading ? 'VERIFYING...' : (isForgotMode ? 'SEND RECOVERY' : (isLogin ? 'AUTHORIZE PORTAL' : 'INITIALIZE NODE'))}</span>
             </button>
 
-            {isLogin && !isForgotMode && (
+            {isLogin && !isForgotMode && import.meta.env.VITE_GOOGLE_CLIENT_ID && (
               <div className="flex flex-col items-center gap-6 mt-8">
                 <div className="flex items-center gap-4 w-full">
                   <div className="h-px bg-white/5 flex-grow" />

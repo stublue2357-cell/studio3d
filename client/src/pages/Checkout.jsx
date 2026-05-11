@@ -30,9 +30,20 @@ const Checkout = () => {
     setShippingData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const [errorMsg, setErrorMsg] = useState('');
+
   const handleCheckout = async (e) => {
     e.preventDefault();
+    setErrorMsg('');
+
     if (cartItems.length === 0) return alert('Your cart is empty!');
+
+    // Manual Validation
+    const { firstName, lastName, address, city, phone } = shippingData;
+    if (!firstName || !lastName || !address || !city || !phone) {
+      setErrorMsg('SIGNAL_INCOMPLETE // ALL_REQUIRED_FIELDS_MUST_BE_FILLED');
+      return;
+    }
 
     setIsProcessing(true);
     try {
@@ -58,12 +69,12 @@ const Checkout = () => {
         paymentMethod: 'after_approval'
       };
 
-      await placeOrder(orderPayload, token);
+      const { data } = await placeOrder(orderPayload, token);
       if (clearCart) clearCart();
-      navigate('/success');
+      navigate('/success', { state: { order: data.order || orderPayload } });
     } catch (err) {
       console.error('Order failed:', err);
-      alert('Order submission failed. Please try again.');
+      setErrorMsg('ORDER_FAILED // CONNECTION_UNSTABLE');
     } finally {
       setIsProcessing(false);
     }
@@ -95,19 +106,19 @@ const Checkout = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[9px] font-bold uppercase tracking-widest text-slate-500 ml-1">First Name</label>
-                  <input required name="firstName" value={shippingData.firstName} onChange={handleInputChange} type="text" placeholder="JOHN" className="w-full bg-white/[0.03] border border-white/10 px-6 py-4 rounded-xl outline-none focus:border-indigo-400 text-[11px] font-bold tracking-widest text-white transition-all placeholder:text-slate-700" />
+                  <input name="firstName" value={shippingData.firstName} onChange={handleInputChange} type="text" placeholder="JOHN" className="w-full bg-white/[0.03] border border-white/10 px-6 py-4 rounded-xl outline-none focus:border-indigo-400 text-[11px] font-bold tracking-widest text-white transition-all placeholder:text-slate-700" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[9px] font-bold uppercase tracking-widest text-slate-500 ml-1">Last Name</label>
-                  <input required name="lastName" value={shippingData.lastName} onChange={handleInputChange} type="text" placeholder="DOE" className="w-full bg-white/[0.03] border border-white/10 px-6 py-4 rounded-xl outline-none focus:border-indigo-400 text-[11px] font-bold tracking-widest text-white transition-all placeholder:text-slate-700" />
+                  <input name="lastName" value={shippingData.lastName} onChange={handleInputChange} type="text" placeholder="DOE" className="w-full bg-white/[0.03] border border-white/10 px-6 py-4 rounded-xl outline-none focus:border-indigo-400 text-[11px] font-bold tracking-widest text-white transition-all placeholder:text-slate-700" />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-[9px] font-bold uppercase tracking-widest text-slate-500 ml-1">Street Address</label>
-                  <input required name="address" value={shippingData.address} onChange={handleInputChange} type="text" placeholder="123 MAIN STREET" className="w-full bg-white/[0.03] border border-white/10 px-6 py-4 rounded-xl outline-none focus:border-indigo-400 text-[11px] font-bold tracking-widest text-white transition-all placeholder:text-slate-700" />
+                  <input name="address" value={shippingData.address} onChange={handleInputChange} type="text" placeholder="123 MAIN STREET" className="w-full bg-white/[0.03] border border-white/10 px-6 py-4 rounded-xl outline-none focus:border-indigo-400 text-[11px] font-bold tracking-widest text-white transition-all placeholder:text-slate-700" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[9px] font-bold uppercase tracking-widest text-slate-500 ml-1">City</label>
-                  <input required name="city" value={shippingData.city} onChange={handleInputChange} type="text" placeholder="KARACHI" className="w-full bg-white/[0.03] border border-white/10 px-6 py-4 rounded-xl outline-none focus:border-indigo-400 text-[11px] font-bold tracking-widest text-white transition-all placeholder:text-slate-700" />
+                  <input name="city" value={shippingData.city} onChange={handleInputChange} type="text" placeholder="KARACHI" className="w-full bg-white/[0.03] border border-white/10 px-6 py-4 rounded-xl outline-none focus:border-indigo-400 text-[11px] font-bold tracking-widest text-white transition-all placeholder:text-slate-700" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[9px] font-bold uppercase tracking-widest text-slate-500 ml-1">ZIP / Postal Code</label>
@@ -115,13 +126,19 @@ const Checkout = () => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[9px] font-bold uppercase tracking-widest text-slate-500 ml-1">Phone Number</label>
-                  <input required name="phone" value={shippingData.phone} onChange={handleInputChange} type="text" placeholder="+92 300 0000000" className="w-full bg-white/[0.03] border border-white/10 px-6 py-4 rounded-xl outline-none focus:border-indigo-400 text-[11px] font-bold tracking-widest text-white transition-all placeholder:text-slate-700" />
+                  <input name="phone" value={shippingData.phone} onChange={handleInputChange} type="text" placeholder="+92 321 2418340" className="w-full bg-white/[0.03] border border-white/10 px-6 py-4 rounded-xl outline-none focus:border-indigo-400 text-[11px] font-bold tracking-widest text-white transition-all placeholder:text-slate-700" />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-[9px] font-bold uppercase tracking-widest text-slate-500 ml-1">Special Instructions / Design Notes</label>
                   <textarea name="customerNote" value={shippingData.customerNote} onChange={handleInputChange} placeholder="ADD ANY SPECIAL REQUESTS OR DESIGN NOTES FOR THE ADMIN..." className="w-full h-28 bg-white/[0.03] border border-white/10 px-6 py-4 rounded-xl outline-none focus:border-indigo-400 text-[11px] font-bold tracking-widest text-white transition-all resize-none placeholder:text-slate-700" />
                 </div>
               </div>
+              
+              {errorMsg && (
+                <div className="mt-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-rose-500 text-center">{errorMsg}</p>
+                </div>
+              )}
             </div>
 
             {/* Payment Notice - No Card Fields */}

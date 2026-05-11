@@ -89,6 +89,15 @@ export const CartProvider = ({ children }) => {
     setCartItems((prevItems) => prevItems.filter(item => item.id !== itemId));
   };
 
+  /**
+   * CLEAR CART
+   * Resets the cart items to an empty array.
+   */
+  const clearCart = () => {
+    setCartItems([]);
+  };
+
+
   return (
     // The .Provider makes these values available to all children components.
     <CartContext.Provider value={{ 
@@ -96,6 +105,7 @@ export const CartProvider = ({ children }) => {
       setCartItems, 
       addToCart, 
       removeFromCart,
+      clearCart,
       isCartOpen,
       setIsCartOpen
     }}>
@@ -103,3 +113,5 @@ export const CartProvider = ({ children }) => {
     </CartContext.Provider>
   );
 };
+
+

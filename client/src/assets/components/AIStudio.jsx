@@ -40,6 +40,11 @@ const AIStudio = () => {
     const handlePartSelect = (e) => setSelectedPartName(e.detail);
     const handlePartColorsUpdated = (e) => setPartColors(e.detail);
     
+    // Check for Resume Session from Dashboard
+    if (location.state?.resumeSession) {
+      handleLoadSession(location.state.resumeSession);
+    }
+
     window.addEventListener('3D_PART_SELECTED', handlePartSelect);
     window.addEventListener('PART_COLORS_UPDATED', handlePartColorsUpdated);
     
@@ -128,9 +133,7 @@ const AIStudio = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    setIsSaving(true);
-    try {
-      const sessionData = {
+    let sessionData = {
         sessionId,
         name: prompt ? prompt.substring(0, 20) + '...' : 'Untitled Design',
         canvasJSON: canvasState,
@@ -140,8 +143,10 @@ const AIStudio = () => {
         aiTexture: aiImage,
         chatHistory: chatHistory,
         thumbnail: overlayImage
-      };
+    };
 
+    setIsSaving(true);
+    try {
       const { data } = await saveSession(sessionData, token);
       setSessionId(data._id);
       setLastSaved(new Date());
@@ -149,7 +154,8 @@ const AIStudio = () => {
       // Clear local backup once server save is successful
       localStorage.removeItem('studio3d_draft_backup');
     } catch (err) {
-      if (!isAuto) alert("Failed to save session");
+      console.error("Save Error:", err.response?.data || err.message);
+      if (!isAuto) alert("Failed to save session: " + (err.response?.data?.message || err.response?.data?.msg || "Internal Server Error"));
       
       // If server fails, ensure local backup is kept
       localStorage.setItem('studio3d_draft_backup', JSON.stringify(sessionData));
@@ -256,6 +262,31 @@ const AIStudio = () => {
     };
 
     addToCart(baseProduct, customDesign);
+  };
+
+  const handleUploadToInventory = async () => {
+    if (!overlayImage) return alert("SIGNAL_ERROR: Visual data required.");
+    
+    try {
+      const token = localStorage.getItem('token');
+      const payload = {
+        name: prompt ? `AI ${prompt.substring(0, 15)}` : `AI DESIGN ${Date.now()}`,
+        price: 59.99,
+        description: "AI Generated Apparel Design",
+        longDescription: `Synthesized apparel design based on prompt: ${prompt || "Unknown"}`,
+        category: "Designer",
+        imageUrl: overlayImage,
+        stock: 50,
+        specs: ["AI Generated", "Premium Fabric", "Custom Fit"]
+      };
+
+      const { addProduct } = await import('../../api');
+      await addProduct(payload, token);
+      alert("SIGNAL_SYNCED: Design successfully uploaded to Global Inventory.");
+    } catch (err) {
+      console.error("Upload Error:", err.response?.data || err.message);
+      alert("UPLOAD_FAILED: Neural link to inventory interrupted.");
+    }
   };
 
   const handleExport = useCallback((data) => {
@@ -498,7 +529,7 @@ const AIStudio = () => {
       />
 
       {/* 3D Preview Section */}
-      <div className="flex-grow relative bg-[#0a0a0e] flex items-center justify-center overflow-hidden z-10 min-h-[50vh] md:min-h-[calc(100vh-90px)]" onClick={() => window.innerWidth > 768 && setActiveSidebarPanel(null)}>
+      <div className="flex-grow relative bg-[#0a0a0e] flex items-center justify-center overflow-hidden z-10 min-h-[50vh] md:min-h-[calc(100vh-90px)]">
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
           
           <div className="absolute top-10 left-1/2 -translate-x-1/2 z-[80] pointer-events-none">
@@ -550,13 +581,23 @@ const AIStudio = () => {
                     >
                       {isSaving ? 'Syncing...' : 'Save Design'}
                     </motion.button>
-                    <motion.button
-                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                      onClick={handleAddToCart}
-                      className="w-full md:w-auto px-6 md:px-8 py-4 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] md:tracking-[0.4em] transition-all bg-white text-black hover:bg-emerald-500 hover:text-white shadow-2xl"
-                    >
-                      Confirm & Vault
-                    </motion.button>
+                    {!['admin', 'developer', 'owner', 'sub-owner'].includes(localStorage.getItem('role')) ? (
+                      <motion.button
+                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
+                        onClick={handleAddToCart}
+                        className="w-full md:w-auto px-6 md:px-8 py-4 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] md:tracking-[0.4em] transition-all bg-white text-black hover:bg-emerald-500 hover:text-white shadow-2xl"
+                      >
+                        Confirm & Vault
+                      </motion.button>
+                    ) : (
+                      <motion.button
+                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
+                        onClick={handleUploadToInventory}
+                        className="w-full md:w-auto px-6 md:px-8 py-4 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] md:tracking-[0.4em] transition-all bg-emerald-600 text-white hover:bg-emerald-500 shadow-2xl border border-emerald-400/30"
+                      >
+                        Upload to Inventory
+                      </motion.button>
+                    )}
                   </>
                 )}
               </AnimatePresence>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAllOrdersAdmin, updateOrderStatus } from '../api';
+import Receipt from '../assets/components/Receipt.jsx';
 
 // NOTE: @google/model-viewer was removed from this component because 
 // we now open 3D views in a dedicated full-screen tab instead of an embedded modal.
@@ -318,6 +319,7 @@ const AdminOrders = ({ isEmbedded }) => {
           </div>
         )}
       </AnimatePresence>
+      <Receipt order={selectedOrder} />
     </div>
   );
 };

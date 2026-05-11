@@ -108,22 +108,28 @@ const Products = () => {
 
                 {/* 👉 Button ko Link se bahar rakha hai taake "Add to Vault" theek kaam kare */}
                 {/* 👉 Buttons to interact with the neural network */}
-                <div className="px-6 pb-6 mt-auto flex flex-col gap-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xl font-black italic tracking-tighter text-indigo-400">
-                      ${product.price}
-                    </span>
-                    <button 
-                      onClick={() => addToCart(product)}
-                      className="px-6 py-3 bg-white text-black text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-cyan-500 hover:text-white transition-all shadow-lg relative z-10"
-                    >
-                      Add to Cart
-                    </button>
+                <div className="px-6 pb-6 mt-auto flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Price Unit</span>
+                      <span className="text-2xl font-black italic tracking-tighter text-indigo-400">
+                        ${product.price}
+                      </span>
+                    </div>
+                    {!['admin', 'developer', 'owner', 'sub-owner'].includes(localStorage.getItem('role')) && (
+                      <button 
+                        onClick={() => addToCart(product)}
+                        className="px-6 py-3 bg-white text-black text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-cyan-500 hover:text-white transition-all shadow-xl relative z-10"
+                      >
+                        Add to Cart
+                      </button>
+                    )}
                   </div>
+
                   <Link 
                     to="/studio" 
                     state={{ baseProduct: product }}
-                    className="w-full py-3 bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest rounded-full text-center hover:bg-white/10 transition-all text-slate-400"
+                    className="w-full py-4 bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest rounded-full text-center hover:bg-indigo-500/20 hover:border-indigo-500/40 hover:text-white transition-all text-slate-400"
                   >
                     Design in AI Studio
                   </Link>

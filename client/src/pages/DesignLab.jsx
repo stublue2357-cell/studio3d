@@ -436,7 +436,7 @@ const DesignLab = () => {
             ref={modelViewerRef}
             src={modelPath}
             alt="3D Apparel Model"
-            auto-rotate={!activeElementId}
+            auto-rotate={false}
             camera-controls
             shadow-intensity="1"
             environment-image="neutral"
@@ -491,13 +491,42 @@ const DesignLab = () => {
               >
                 Apply to 3D
               </button>
-              <button 
-                onClick={handleOrder} disabled={loading || !modelTexture}
-                className="flex-1 md:flex-none px-8 py-4 bg-white text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-30 shadow-2xl"
-              >
-                Confirm & Vault
-              </button>
+
+              {!['admin', 'developer', 'owner', 'sub-owner'].includes(localStorage.getItem('role')) ? (
+                <button 
+                  onClick={handleOrder} disabled={loading || !modelTexture}
+                  className="flex-1 md:flex-none px-8 py-4 bg-white text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-30 shadow-2xl"
+                >
+                  Confirm & Vault
+                </button>
+              ) : (
+                <button 
+                  onClick={async () => {
+                    if (!modelTexture) return alert("SIGNAL_REQUIRED: Please 'Apply to 3D' first to capture the texture.");
+                    try {
+                      const token = localStorage.getItem('token');
+                      const { addProduct } = await import('../api');
+                      await addProduct({
+                        name: `3D DESIGN ${Date.now()}`,
+                        price: 69.99,
+                        description: "Professional 3D Studio Design",
+                        category: "Designer",
+                        imageUrl: modelTexture,
+                        stock: 100
+                      }, token);
+                      alert("UPLOAD_SUCCESS: Design added to store inventory.");
+                    } catch (err) {
+                      alert("UPLOAD_FAILED: Check neural connection.");
+                    }
+                  }}
+                  disabled={loading || !modelTexture}
+                  className="flex-1 md:flex-none px-8 py-4 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all disabled:opacity-30 shadow-2xl"
+                >
+                  Upload to Inventory
+                </button>
+              )}
           </div>
+
       </div>
 
       {/* RIGHT EDIT PANEL */}

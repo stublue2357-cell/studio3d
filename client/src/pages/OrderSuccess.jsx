@@ -1,24 +1,23 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx'; 
+import Receipt from '../assets/components/Receipt.jsx';
 
 const OrderSuccess = () => {
   const { setCartItems } = useCart() || {};
   const navigate = useNavigate();
+  const location = useLocation();
+  const order = location.state?.order;
 
   // 🛡️ SECURITY & CLEANUP LOGIC
   useEffect(() => {
-    // 1. Cart khali karna
     if (setCartItems) {
       setCartItems([]);
     }
 
-    // 2. BACK BUTTON REDIRECTION: 
-    // Agar user browser ka back button dabaye toh wo checkout par na jaye
     window.history.pushState(null, null, window.location.pathname);
     const handlePopState = () => {
-      // User ko dashboard par bhej do agar wo back jane ki koshish kare
       navigate('/dashboard', { replace: true });
     };
 
@@ -26,8 +25,7 @@ const OrderSuccess = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [setCartItems, navigate]);
 
-  // Ek random futuristic order ID generate karne ke liye
-  const orderId = `S3D-${Math.floor(1000 + Math.random() * 9000)}-XT`;
+  const orderId = order?._id || `S3D-${Math.floor(1000 + Math.random() * 9000)}-XT`;
 
   return (
     <div className="relative min-h-[80vh] flex items-center justify-center pt-32 pb-20 px-6">
@@ -86,16 +84,27 @@ const OrderSuccess = () => {
 
         {/* Action Buttons */}
         <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
-          {/* 👉 Ye button ab live Dashboard (Vault) par jayega jahan order history hai */}
           <Link to="/dashboard" className="w-full md:w-auto px-10 py-5 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] transition-all bg-gradient-to-r from-emerald-600 to-teal-500 text-white hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] text-center">
             Track My Order
           </Link>
-          <Link to="/products" className="w-full md:w-auto px-10 py-5 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] transition-all bg-white/[0.03] text-slate-300 border border-white/10 hover:bg-white/10 hover:text-white text-center">
-            Continue Shopping
-          </Link>
+          <button 
+            onClick={() => window.print()}
+            className="w-full md:w-auto px-10 py-5 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] transition-all bg-white text-black hover:bg-emerald-500 hover:text-white text-center shadow-xl"
+          >
+            Download Receipt
+          </button>
+        </div>
+
+        <div className="mt-8">
+           <Link to="/products" className="text-slate-500 hover:text-white text-[9px] font-bold uppercase tracking-[0.4em] transition-all">
+             ← Continue Shopping
+           </Link>
         </div>
 
       </motion.div>
+
+      {/* HIDDEN PRINTABLE RECEIPT */}
+      {order && <Receipt order={order} />}
     </div>
   );
 };

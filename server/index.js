@@ -10,6 +10,7 @@ const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders'); 
 const aiRoutes = require('./routes/ai');
 const sessionRoutes = require('./routes/sessions');
+const contactRoutes = require('./routes/contact');
 const app = express();
 
 // --- GLOBAL SIMULATION MODE (Default: ON) ---
@@ -32,6 +33,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes); 
 app.use('/api/ai', aiRoutes);
 app.use('/api/sessions', sessionRoutes);
+app.use('/api/contact', contactRoutes);
 
 // ====================================================================
 // 🧠 DATABASE CONNECTION & NEURAL MONITORING LOGIC
@@ -68,11 +70,21 @@ const connectDB = async () => {
         try {
             const User = mongoose.models.User || require('./models/user');
             const bcrypt = require('bcryptjs');
-            const adminExists = await User.findOne({ email: 'admin@studio3d.com' });
+            
+            const adminExists = await User.findOne({ email: 'admin@demo.com' });
             if (!adminExists) {
                 const hashedPassword = await bcrypt.hash('123456', 10);
-                await new User({ name: 'Studio Admin', email: 'admin@studio3d.com', password: hashedPassword, role: 'admin' }).save();
-                console.log("Seeded default admin (admin@studio3d.com / 123456)");
+                
+                // 1. Developer Account
+                await new User({ name: 'Lead Developer', email: 'stublue2357@gmail.com', password: hashedPassword, role: 'developer' }).save();
+                
+                // 2. Demo Admin
+                await new User({ name: 'Demo Admin', email: 'admin@demo.com', password: hashedPassword, role: 'admin' }).save();
+                
+                // 3. Demo User
+                await new User({ name: 'Demo User', email: 'user@demo.com', password: hashedPassword, role: 'user' }).save();
+                
+                console.log("Seeded default accounts (stublue2357@gmail.com, admin@demo.com, user@demo.com)");
             }
             
             const Product = mongoose.models.Product || require('./models/product');

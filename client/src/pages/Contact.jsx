@@ -1,7 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { submitContact } from '../api';
 
 const Contact = () => {
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [msg, setMsg] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setMsg('');
+    try {
+      const { data } = await submitContact(formData);
+      setMsg(data.msg || "TRANSMISSION_SUCCESS // SIGNAL_RECEIVED");
+      setFormData({ name: '', email: '', message: '' });
+    } catch (err) {
+      setMsg(err.response?.data?.msg || "PROTOCOL_ERROR // TRANSMISSION_FAILED");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="relative min-h-screen pt-32 pb-20 px-6 max-w-[1200px] mx-auto w-full">
       
@@ -37,7 +57,7 @@ const Contact = () => {
               <div>
                 <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] block mb-2">Direct Line (Phone)</span>
                 <p className="text-[13px] font-bold text-white tracking-widest uppercase hover:text-indigo-400 transition-colors cursor-pointer">
-                  +92 3XX XXXXXXX
+                  +92 321 2418340
                 </p>
               </div>
 
@@ -74,30 +94,58 @@ const Contact = () => {
             {/* Form Glow */}
             <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-indigo-500/5 blur-[80px] rounded-full pointer-events-none" />
 
-            <form className="space-y-8 relative z-10">
+            <form className="space-y-8 relative z-10" onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <label className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-600 ml-1">Identity Name</label>
-                  <input required type="text" placeholder="ENTER NAME" className="w-full bg-white/[0.03] border border-white/10 px-6 py-4 rounded-xl outline-none focus:border-indigo-400 text-[11px] font-bold text-white tracking-widest transition-all placeholder:text-slate-800" />
+                  <input 
+                    required 
+                    type="text" 
+                    placeholder="ENTER NAME" 
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="w-full bg-white/[0.03] border border-white/10 px-6 py-4 rounded-xl outline-none focus:border-indigo-400 text-[11px] font-bold text-white tracking-widest transition-all placeholder:text-slate-800" 
+                  />
                 </div>
                 <div className="space-y-3">
                   <label className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-600 ml-1">Signal Address</label>
-                  <input required type="email" placeholder="EMAIL@NETWORK.COM" className="w-full bg-white/[0.03] border border-white/10 px-6 py-4 rounded-xl outline-none focus:border-indigo-400 text-[11px] font-bold text-white tracking-widest transition-all placeholder:text-slate-800" />
+                  <input 
+                    required 
+                    type="email" 
+                    placeholder="EMAIL@NETWORK.COM" 
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    className="w-full bg-white/[0.03] border border-white/10 px-6 py-4 rounded-xl outline-none focus:border-indigo-400 text-[11px] font-bold text-white tracking-widest transition-all placeholder:text-slate-800" 
+                  />
                 </div>
               </div>
               
               <div className="space-y-3">
                 <label className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-600 ml-1">Encrypted Message</label>
-                <textarea required rows="6" placeholder="TYPE YOUR SIGNAL HERE..." className="w-full bg-white/[0.03] border border-white/10 p-6 rounded-2xl outline-none focus:border-indigo-400 text-[11px] font-bold text-white tracking-widest transition-all resize-none placeholder:text-slate-800"></textarea>
+                <textarea 
+                  required 
+                  rows="6" 
+                  placeholder="TYPE YOUR SIGNAL HERE..." 
+                  value={formData.message}
+                  onChange={(e) => setFormData({...formData, message: e.target.value})}
+                  className="w-full bg-white/[0.03] border border-white/10 p-6 rounded-2xl outline-none focus:border-indigo-400 text-[11px] font-bold text-white tracking-widest transition-all resize-none placeholder:text-slate-800"
+                ></textarea>
               </div>
 
               <motion.button 
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full py-5 bg-gradient-to-r from-indigo-600 to-cyan-600 text-white text-[10px] font-black uppercase tracking-[0.5em] rounded-xl shadow-[0_10px_30px_rgba(99,102,241,0.2)] transition-all"
+                disabled={isLoading}
+                className={`w-full py-5 bg-gradient-to-r from-indigo-600 to-cyan-600 text-white text-[10px] font-black uppercase tracking-[0.5em] rounded-xl shadow-[0_10px_30px_rgba(99,102,241,0.2)] transition-all ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                Transmit Signal
+                {isLoading ? 'TRANSMITTING...' : 'Transmit Signal'}
               </motion.button>
+
+              {msg && (
+                <p className={`text-[10px] font-black uppercase tracking-widest text-center mt-4 ${msg.includes('SUCCESS') ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {msg}
+                </p>
+              )}
             </form>
           </motion.div>
         </div>

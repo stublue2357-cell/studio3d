@@ -170,3 +170,5 @@ export const deleteSession = (id, token) => {
     headers: { 'x-auth-token': token }
   });
 };
+
+export const submitContact = (formData) => API.post('/contact', formData);

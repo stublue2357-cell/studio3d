@@ -115,17 +115,24 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {/* ACTION BUTTON */}
-            <motion.button 
-              whileHover={product.stock > 0 ? { scale: 1.02 } : {}}
-              whileTap={product.stock > 0 ? { scale: 0.98 } : {}}
-              disabled={product.stock === 0}
-              onClick={() => addToCart({...product, size: selectedSize})}
-              className={`group relative w-full py-8 rounded-3xl text-[12px] font-black uppercase tracking-[0.5em] overflow-hidden ${product.stock > 0 ? 'bg-white text-black' : 'bg-white/5 text-slate-500 cursor-not-allowed'}`}
-            >
-              <span className="relative z-10">{product.stock > 0 ? 'Authorize Transaction' : 'Stock Depleted'}</span>
-              {product.stock > 0 && <div className="absolute inset-0 bg-indigo-600 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>}
-            </motion.button>
+            {/* ACTION BUTTON - Hidden for Admins/Staff */}
+            {!['admin', 'developer', 'owner', 'sub-owner'].includes(localStorage.getItem('role')) ? (
+              <motion.button 
+                whileHover={product.stock > 0 ? { scale: 1.02 } : {}}
+                whileTap={product.stock > 0 ? { scale: 0.98 } : {}}
+                disabled={product.stock === 0}
+                onClick={() => addToCart({...product, size: selectedSize})}
+                className={`group relative w-full py-8 rounded-3xl text-[12px] font-black uppercase tracking-[0.5em] overflow-hidden ${product.stock > 0 ? 'bg-white text-black' : 'bg-white/5 text-slate-500 cursor-not-allowed'}`}
+              >
+                <span className="relative z-10">{product.stock > 0 ? 'Authorize Transaction' : 'Stock Depleted'}</span>
+                {product.stock > 0 && <div className="absolute inset-0 bg-indigo-600 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>}
+              </motion.button>
+            ) : (
+              <div className="w-full py-8 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 text-center">
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">Preview Mode // Staff Node</span>
+              </div>
+            )}
+
 
             {/* --- DETAILED INFO TABS --- */}
             <div className="mt-20 border-t border-white/5 pt-12">

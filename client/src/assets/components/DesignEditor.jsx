@@ -419,7 +419,7 @@ const DesignEditor = ({ onExport, activePanel, initialState, onStateChange }) =>
         // IMPORTANT: Manually trigger the modification events so listeners update 3D model and history
         fabricCanvas.fire('object:modified', { target: activeObject });
       } else {
-        console.log('No active object to apply color to');
+        // Subtle indicator or ignore
       }
     }
   };

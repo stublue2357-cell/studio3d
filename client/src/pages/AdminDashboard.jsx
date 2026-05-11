@@ -4,8 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import AdminProducts from './AdminProducts'; 
 import AdminOrders from './AdminOrders'; 
+import UserManagement from './UserManagement';
 import ProfileSettings from './ProfileSettings';
 import { getAllOrdersAdmin } from '../api';
+import { useCart } from '../context/CartContext';
 
 // --- SECURITY SETTINGS MODULE ---
 const SecuritySettings = () => (
@@ -23,14 +25,15 @@ const SecuritySettings = () => (
 );
 
 // --- ADVANCED ANALYTICS MODULE ---
-const AnalyticsData = ({ orders }) => {
-  const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-  const pendingOrders = orders.filter(o => o.status === 'Pending').length;
+const AnalyticsData = ({ orders = [] }) => {
+  const safeOrders = Array.isArray(orders) ? orders : [];
+  const totalRevenue = safeOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+  const pendingOrders = safeOrders.filter(o => o.status === 'Pending').length;
 
   // Chart Data: Last 7 transmissions
-  const chartData = orders.slice(0, 7).map(o => ({
-    name: o._id.slice(-4),
-    amt: o.totalAmount
+  const chartData = safeOrders.slice(0, 7).map(o => ({
+    name: o._id?.slice(-4) || '...',
+    amt: o.totalAmount || 0
   })).reverse();
 
   return (
@@ -38,7 +41,7 @@ const AnalyticsData = ({ orders }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
           { label: 'Total Revenue', value: `$${totalRevenue}`, color: 'text-blue-500' },
-          { label: 'Active Signals', value: orders.length, color: 'text-cyan-400' },
+          { label: 'Active Signals', value: safeOrders.length, color: 'text-cyan-400' },
           { label: 'Pending Synthesis', value: pendingOrders, color: 'text-amber-400' }
         ].map((stat, i) => (
           <div key={i} className="glass-panel p-6 rounded-[2rem] border border-white/5 bg-black/40 shadow-[0_0_20px_rgba(59,130,246,0.05)]">
@@ -98,10 +101,13 @@ const AdminDashboard = () => {
     syncMainframe();
   }, [navigate]);
 
+  const { clearCart } = useCart();
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     localStorage.removeItem('isAdmin');
+    if (clearCart) clearCart();
     navigate('/login');
   };
 

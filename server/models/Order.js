@@ -9,7 +9,7 @@ const OrderSchema = new mongoose.Schema({
       size: { type: String },
       customDesign: { 
         type: { type: String }, // 'AI' or 'MANUAL'
-        data: { type: String }  // Base64 Image URL
+        data: { type: mongoose.Schema.Types.Mixed }  // Flexible data object or string
       }
     }
   ],

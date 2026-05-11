@@ -23,13 +23,18 @@ const { logActivity } = require('../utils/activityLogger');
 // @route   POST /api/sessions
 // @desc    Save or update a session
 router.post('/', auth, async (req, res) => {
+  console.log(`[SESSION] Save request received from UID: ${req.user.id}`);
+  
   if (global.isSimulationMode) {
+    console.log("[SESSION] Simulation Mode Active. Saving to mock store.");
     const savedSession = mockStore.saveSession(req.body, req.user.id);
     await logActivity(req.user.id, "DESIGN_SAVED", `Synthesized design protocol: ${req.body.name || "Unnamed Design"}`);
     return res.json(savedSession);
   }
   try {
     const { sessionId, name, canvasJSON, fabricColor, baseType, aiTexture, chatHistory, thumbnail } = req.body;
+
+    console.log(`[SESSION] Attempting to save session: ${name || 'Untitled'} (ID: ${sessionId || 'New'})`);
 
     // SANITIZE SESSION ID: Prevent CastError if sessionId is invalid
     const isValidSessionId = sessionId && typeof sessionId === 'string' && sessionId.length === 24 && /^[0-9a-fA-F]{24}$/.test(sessionId);
@@ -41,6 +46,7 @@ router.post('/', auth, async (req, res) => {
         { new: true }
       );
       if (session) {
+        console.log(`[SESSION] Updated existing session: ${session._id}`);
         await logActivity(req.user.id, "DESIGN_UPDATED", `Modified existing design protocol: ${name || "Unnamed Design"}`);
         return res.json(session);
       }
@@ -58,13 +64,19 @@ router.post('/', auth, async (req, res) => {
     });
 
     const savedSession = await newSession.save();
+    console.log(`[SESSION] Created new session: ${savedSession._id}`);
     await logActivity(req.user.id, "DESIGN_SAVED", `Synthesized new ${baseType || "apparel"} design: ${name || "Unnamed Protocol"}`);
     res.json(savedSession);
   } catch (err) {
-    console.error(err);
-    res.status(500).send('Server Error');
+    console.error("[SESSION] CRITICAL_ERROR:", err);
+    res.status(500).json({ 
+        message: 'Server Error during session persistence', 
+        error: err.message,
+        details: err.name === 'ValidationError' ? err.errors : null
+    });
   }
 });
+
 
 // @route   GET /api/sessions
 // @desc    Get all sessions for a user

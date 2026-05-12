@@ -69,9 +69,8 @@ export const getAllOrdersAdmin = (token) => API.get('/orders/admin/all', {
 });
 
 // 4. Order status update karna (Pending to Delivered)
-export const updateOrderStatus = (id, payload, token) => API.patch(`/orders/status/${id}`, payload, {
-  headers: { 'x-auth-token': token }
-});
+export const updateOrderStatus = (id, payload, token) => API.patch(`/orders/status/${id}`, payload, { headers: { 'x-auth-token': token } });
+export const respondToNegotiation = (id, payload, token) => API.patch(`/orders/negotiate/${id}`, payload, { headers: { 'x-auth-token': token } });
 
 // 5. Admin performance analytics (Executive only)
 export const getAdminPerformance = (token) => API.get('/orders/admin/performance', {

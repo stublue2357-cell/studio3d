@@ -24,6 +24,11 @@ const OrderSchema = new mongoose.Schema({
   customerNote: { type: String },
   adminFeedback: { type: String },
   handledBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  negotiation: {
+    status: { type: String, default: 'None' }, // None, Proposed, Countered, Accepted, Rejected
+    proposedPrice: { type: Number },
+    counterPrice: { type: Number }
+  },
   createdAt: { type: Date, default: Date.now }
 });
 

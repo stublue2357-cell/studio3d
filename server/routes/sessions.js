@@ -37,18 +37,24 @@ router.post('/', auth, async (req, res) => {
     console.log(`[SESSION] Attempting to save session: ${name || 'Untitled'} (ID: ${sessionId || 'New'})`);
 
     // SANITIZE SESSION ID: Prevent CastError if sessionId is invalid
+    let session = null;
     const isValidSessionId = sessionId && typeof sessionId === 'string' && sessionId.length === 24 && /^[0-9a-fA-F]{24}$/.test(sessionId);
 
     if (isValidSessionId) {
-      const session = await Session.findOneAndUpdate(
-        { _id: sessionId, userId: req.user.id },
-        { name, canvasJSON, fabricColor, baseType, aiTexture, chatHistory, thumbnail },
-        { new: true }
-      );
-      if (session) {
-        console.log(`[SESSION] Updated existing session: ${session._id}`);
-        await logActivity(req.user.id, "DESIGN_UPDATED", `Modified existing design protocol: ${name || "Unnamed Design"}`);
-        return res.json(session);
+      try {
+        session = await Session.findOneAndUpdate(
+          { _id: sessionId, userId: req.user.id },
+          { name, canvasJSON, fabricColor, baseType, aiTexture, chatHistory, thumbnail },
+          { new: true }
+        );
+        if (session) {
+          console.log(`[SESSION] Updated existing session: ${session._id}`);
+          await logActivity(req.user.id, "DESIGN_UPDATED", `Modified existing design protocol: ${name || "Unnamed Design"}`);
+          return res.json(session);
+        }
+      } catch (findErr) {
+        console.error("[SESSION] FIND_AND_UPDATE_ERROR:", findErr.message);
+        // Fall through to create new if update fails
       }
     }
 
@@ -72,7 +78,7 @@ router.post('/', auth, async (req, res) => {
     res.status(500).json({ 
         message: 'Server Error during session persistence', 
         error: err.message,
-        details: err.name === 'ValidationError' ? err.errors : null
+        details: err.name === 'ValidationError' ? Object.keys(err.errors).map(key => err.errors[key].message) : null
     });
   }
 });

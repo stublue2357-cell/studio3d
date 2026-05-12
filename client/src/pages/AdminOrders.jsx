@@ -11,6 +11,7 @@ const AdminOrders = ({ isEmbedded }) => {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null); // 👉 Invoice Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [proposalPrice, setProposalPrice] = useState("");
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
@@ -59,15 +60,22 @@ const AdminOrders = ({ isEmbedded }) => {
     finally { setLoading(false); }
   };
 
-  const handleStatusChange = async (id, newStatus, newPrice = null, feedback = null) => {
+  const handleStatusChange = async (id, newStatus, newPrice = null, feedback = null, negotiation = null) => {
     try {
       const token = localStorage.getItem('token');
       const payload = { status: newStatus };
       if (newPrice !== null) payload.totalAmount = Number(newPrice);
       if (feedback !== null) payload.adminFeedback = feedback;
+      if (negotiation !== null) payload.negotiation = negotiation;
       
       await updateOrderStatus(id, payload, token);
       fetchOrders();
+      // Update selected order if modal is open
+      if (selectedOrder && selectedOrder._id === id) {
+          const { data } = await getAllOrdersAdmin(token);
+          const updated = data.find(o => o._id === id);
+          if (updated) setSelectedOrder(updated);
+      }
     } catch (err) { 
       const errorMsg = err.response?.data?.msg || "PROTOCOL_ERROR";
       alert(errorMsg); 
@@ -163,6 +171,9 @@ const AdminOrders = ({ isEmbedded }) => {
                   }`}>
                     {order.status}
                   </span>
+                  {order.negotiation?.status === 'Countered' && (
+                    <span className="ml-2 px-1.5 py-0.5 rounded bg-blue-500 text-white text-[6px] font-black animate-pulse">COUNTER</span>
+                  )}
                 </td>
                 <td className="py-4 px-4">
                   {order.handledBy ? (
@@ -235,17 +246,58 @@ const AdminOrders = ({ isEmbedded }) => {
                   {selectedOrder.handledBy && (
                     <div className="text-indigo-400 text-[8px] font-black uppercase mt-1">Assigned Agent: {selectedOrder.handledBy.name}</div>
                   )}
-                  <div className="flex items-center justify-end gap-3 mt-4">
-                     <span className="text-slate-500 text-[9px] uppercase font-black">Price:</span>
-                     <input 
-                        type="number" 
-                        defaultValue={selectedOrder.totalAmount}
-                        onBlur={(e) => handleStatusChange(selectedOrder._id, selectedOrder.status, e.target.value)}
-                        className="bg-white/5 border border-white/10 text-white text-xl font-black italic w-24 text-right px-2 rounded-lg outline-none focus:border-indigo-500"
-                     />
-                     <span className="text-white text-xl font-black italic">.00</span>
+                     <div className="text-white text-2xl font-black italic mt-4">${Number(selectedOrder.totalAmount || 0).toFixed(2)}</div>
+                </div>
+              </div>
+
+              {/* Negotiation Controls */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 relative z-10">
+                <div className="p-6 rounded-[2rem] bg-indigo-600/5 border border-indigo-500/20">
+                  <h4 className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-4">Propose New Price</h4>
+                  <div className="flex items-center gap-4">
+                    <input 
+                      type="number" 
+                      placeholder="Proposed Amount ($)..."
+                      value={proposalPrice}
+                      onChange={(e) => setProposalPrice(e.target.value)}
+                      className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-xs font-bold outline-none focus:border-indigo-500"
+                    />
+                    <button 
+                      onClick={() => {
+                        if (proposalPrice) {
+                          handleStatusChange(selectedOrder._id, 'Price_Negotiation', null, null, { status: 'Proposed', proposedPrice: Number(proposalPrice) });
+                          setProposalPrice(""); // Reset after sending
+                        }
+                      }}
+                      className="px-6 py-3 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all"
+                    >
+                      Send Proposal
+                    </button>
                   </div>
                 </div>
+
+                {selectedOrder.negotiation?.status === 'Countered' && (
+                  <div className="p-6 rounded-[2rem] bg-amber-500/5 border border-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.1)]">
+                    <h4 className="text-[9px] font-black text-amber-500 uppercase tracking-[0.3em] mb-4">User Counter-Offer Detected</h4>
+                    <div className="flex items-center justify-between mb-4">
+                       <span className="text-white text-lg font-black italic">${selectedOrder.negotiation.counterPrice}.00</span>
+                       <div className="flex gap-2">
+                         <button 
+                           onClick={() => handleStatusChange(selectedOrder._id, 'Approved', null, null, { status: 'Accepted' })}
+                           className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-emerald-500"
+                         >
+                           Approve $ {selectedOrder.negotiation.counterPrice}
+                         </button>
+                         <button 
+                           onClick={() => handleStatusChange(selectedOrder._id, 'Rejected', null, "Price counter-offer rejected.")}
+                           className="px-4 py-2 bg-rose-600/10 border border-rose-500/30 text-rose-500 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white"
+                         >
+                           Reject
+                         </button>
+                       </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {selectedOrder.customerNote && (

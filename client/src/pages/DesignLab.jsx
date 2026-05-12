@@ -219,7 +219,10 @@ const DesignLab = () => {
       };
       const { data } = await saveSession(sessionData, token);
       setSessionId(data._id);
-    } catch (err) { if (!isAuto) alert("Failed to save"); }
+    } catch (err) { 
+      const errorMessage = err.response?.data?.message || err.response?.data?.msg || err.message || "Internal Server Error";
+      if (!isAuto) alert("Failed to save: " + errorMessage); 
+    }
     finally { setIsSaving(false); }
   };
 

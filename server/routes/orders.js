@@ -102,7 +102,7 @@ router.get('/admin/all', authMiddleware, anyAdminLevel, async (req, res) => {
 // ---------------------------------------------------------
 router.patch('/status/:id', authMiddleware, anyAdminLevel, async (req, res) => {
   try {
-    const { status, totalAmount, adminFeedback, handledBy } = req.body;
+    const { status, totalAmount, adminFeedback, handledBy, negotiation } = req.body;
     
     if (global.isSimulationMode) {
         const order = mockStore.getOrders().find(o => o._id === req.params.id);
@@ -110,6 +110,7 @@ router.patch('/status/:id', authMiddleware, anyAdminLevel, async (req, res) => {
         if (status) order.status = status;
         if (totalAmount) order.totalAmount = totalAmount;
         if (adminFeedback) order.adminFeedback = adminFeedback;
+        if (negotiation) order.negotiation = { ...order.negotiation, ...negotiation };
         return res.json({ msg: "PROTOCOL_UPDATED // MOCK_SUCCESS", order });
     }
 
@@ -122,13 +123,24 @@ router.patch('/status/:id', authMiddleware, anyAdminLevel, async (req, res) => {
     if (status) order.status = status;
     if (totalAmount) order.totalAmount = totalAmount;
     if (adminFeedback) order.adminFeedback = adminFeedback;
+    
+    // Handle Negotiation Updates
+    if (negotiation) {
+        order.negotiation = { ...order.negotiation, ...negotiation };
+        // If admin accepts a counter-offer
+        if (negotiation.status === 'Accepted' && order.negotiation.counterPrice) {
+            order.totalAmount = order.negotiation.counterPrice;
+            order.status = 'Approved';
+        }
+    }
+
     if (handledBy) {
         order.handledBy = handledBy;
         await logActivity(handledBy, "ORDER_CLAIMED", `Administrator claimed responsibility for Order #${order._id.toString().slice(-6)}`);
     }
 
     await order.save();
-    await logActivity(req.user.id, "STATUS_UPDATED", `Order #${order._id.toString().slice(-6)} status reconfigured to ${status}`);
+    await logActivity(req.user.id, "STATUS_UPDATED", `Order #${order._id.toString().slice(-6)} protocol reconfigured to ${status || order.status}`);
 
     const { sendOrderStatusUpdateEmail } = require('../utils/emailService');
 
@@ -152,6 +164,41 @@ router.patch('/status/:id', authMiddleware, anyAdminLevel, async (req, res) => {
     console.error("Update Status Error:", err);
     res.status(500).json({ msg: "UPDATE_ERROR // PROTOCOL_FAILED" });
   }
+});
+
+// 4.5. USER NEGOTIATION RESPONSE (User Route)
+// ---------------------------------------------------------
+router.patch('/negotiate/:id', authMiddleware, async (req, res) => {
+    try {
+        const { action, counterPrice } = req.body;
+        const order = await Order.findOne({ _id: req.params.id, user: req.user.id });
+
+        if (!order) return res.status(404).json({ msg: "ORDER_NOT_FOUND" });
+
+        if (action === 'ACCEPT') {
+            order.totalAmount = order.negotiation.proposedPrice;
+            order.negotiation.status = 'Accepted';
+            order.status = 'Approved';
+            await logActivity(req.user.id, "NEGOTIATION_ACCEPTED", `User accepted proposed price of $${order.totalAmount} for Order #${order._id.toString().slice(-6)}`);
+        } else if (action === 'COUNTER') {
+            if (order.negotiation.status === 'Countered') {
+                return res.status(400).json({ msg: "ONLY_ONE_COUNTER_ALLOWED" });
+            }
+            order.negotiation.counterPrice = Number(counterPrice);
+            order.negotiation.status = 'Countered';
+            await logActivity(req.user.id, "NEGOTIATION_COUNTERED", `User countered with $${counterPrice} for Order #${order._id.toString().slice(-6)}`);
+        } else if (action === 'REJECT') {
+            order.negotiation.status = 'Rejected';
+            order.status = 'Rejected';
+            await logActivity(req.user.id, "NEGOTIATION_REJECTED", `User rejected price proposal for Order #${order._id.toString().slice(-6)}`);
+        }
+
+        await order.save();
+        res.json({ msg: "NEGOTIATION_TRANSMITTED", order });
+    } catch (err) {
+        console.error("Negotiation Error:", err);
+        res.status(500).json({ msg: "NEGOTIATION_FAILED" });
+    }
 });
 
 // 5. ADMIN PERFORMANCE ANALYTICS

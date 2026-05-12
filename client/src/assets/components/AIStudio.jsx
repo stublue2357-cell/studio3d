@@ -35,6 +35,7 @@ const AIStudio = () => {
   const [sessions, setSessions] = useState([]);
   const [canvasState, setCanvasState] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
 
   useEffect(() => {
     const handlePartSelect = (e) => setSelectedPartName(e.detail);
@@ -155,7 +156,8 @@ const AIStudio = () => {
       localStorage.removeItem('studio3d_draft_backup');
     } catch (err) {
       console.error("Save Error:", err.response?.data || err.message);
-      if (!isAuto) alert("Failed to save session: " + (err.response?.data?.message || err.response?.data?.msg || "Internal Server Error"));
+      const errorMessage = err.response?.data?.message || err.response?.data?.msg || err.message || "Internal Server Error";
+      if (!isAuto) alert("Failed to save session: " + errorMessage);
       
       // If server fails, ensure local backup is kept
       localStorage.setItem('studio3d_draft_backup', JSON.stringify(sessionData));
@@ -568,6 +570,15 @@ const AIStudio = () => {
               {isGenerating ? 'Rendering...' : (aiImage || overlayImage) ? 'Success' : 'Awaiting'}
             </span>
           </div>
+
+          {/* Last Saved Indicator */}
+          {lastSaved && (
+            <div className="absolute top-4 left-4 md:top-8 md:left-8 flex items-center gap-2 z-40 bg-black/40 px-3 py-1.5 rounded-full border border-white/5 backdrop-blur-md">
+              <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-slate-400">
+                Last Saved: <span className="text-indigo-400">{lastSaved.toLocaleTimeString()}</span>
+              </span>
+            </div>
+          )}
 
           <div className="absolute bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:right-8 z-40 w-full px-6 md:w-auto flex flex-col md:flex-row gap-3">
               <AnimatePresence>

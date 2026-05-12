@@ -5,7 +5,7 @@ import Products from './Products.jsx';
 import ProfileSettings from './ProfileSettings';
 import DesignLab from './DesignLab.jsx';
 import Receipt from '../assets/components/Receipt.jsx';
-import { getMyOrders, getMyActivity, getSessions } from '../api';
+import { getMyOrders, getMyActivity, getSessions, respondToNegotiation } from '../api';
 
 // --- MODULE 1: ORDER LOG (With Invoice Trigger) ---
 const OrderHistory = ({ orders, loading, onOpenInvoice }) => (
@@ -232,6 +232,30 @@ const Dashboard = () => {
     fetchSignals();
   }, []);
 
+  const handleNegotiation = async (orderId, action, counterPrice = null) => {
+    try {
+      const token = localStorage.getItem('token');
+      await respondToNegotiation(orderId, { action, counterPrice }, token);
+      // Refresh
+      const [orderRes, activityRes, sessionRes] = await Promise.all([
+        getMyOrders(token),
+        getMyActivity(token),
+        getSessions(token)
+      ]);
+      setOrders(Array.isArray(orderRes.data) ? orderRes.data : []);
+      setActivities(Array.isArray(activityRes.data) ? activityRes.data : []);
+      setSessions(Array.isArray(sessionRes.data) ? sessionRes.data : []);
+      
+      // Update selected order for the modal
+      const updatedOrder = orderRes.data.find(o => o._id === orderId);
+      if (updatedOrder) setSelectedOrder(updatedOrder);
+      
+      alert("NEGOTIATION_RESPONSE_SENT");
+    } catch (err) {
+      alert("NEGOTIATION_FAILED: " + (err.response?.data?.msg || "ERROR"));
+    }
+  };
+
   const openInvoice = (order) => {
     setSelectedOrder(order);
     setIsInvoiceOpen(true);
@@ -302,9 +326,11 @@ const Dashboard = () => {
                   <p className="text-slate-500">Transmission Date: <span className="text-white ml-2">{new Date(selectedOrder.createdAt).toLocaleDateString()}</span></p>
                   <p className="text-slate-500">ID Node: <span className="text-white ml-2">#{(selectedOrder?._id || "SIM_NODE").slice(-8)}</span></p>
                 </div>
-                <div className="text-right space-y-2">
-                  <p className="text-slate-500">Status Node: <span className="text-blue-500 ml-2">{selectedOrder.status}</span></p>
-                  <p className="text-white text-xl font-black italic mt-2">${selectedOrder.totalAmount}.00</p>
+                <div className="space-y-4 text-right">
+                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">Status_Node</h4>
+                  <div className="text-blue-500 text-sm font-black italic tracking-widest uppercase">{selectedOrder.status}</div>
+                  <div className="text-slate-500 text-[9px] uppercase font-bold tracking-widest">Method: {selectedOrder.paymentMethod}</div>
+                  <div className="text-white text-2xl font-black italic mt-4">${Number(selectedOrder.totalAmount || 0).toFixed(2)}</div>
                 </div>
               </div>
 
@@ -362,6 +388,54 @@ const Dashboard = () => {
                   </div>
                 )}
               </div>
+
+              {/* Negotiation Panel */}
+              {(selectedOrder.negotiation?.status === 'Proposed' || selectedOrder.status === 'Price_Negotiation') && (
+                <div className="mb-10 p-8 rounded-3xl bg-indigo-600/10 border border-indigo-500/30 shadow-[0_0_30px_rgba(79,70,229,0.15)] relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 font-black italic text-4xl">QUOTATION</div>
+                  <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] mb-4 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-indigo-500 rounded-full animate-ping" />
+                    Price Re-Quotation Protocol
+                  </h4>
+                  <p className="text-[12px] text-white font-bold mb-6 leading-relaxed">
+                    The admin has proposed a new total of <span className="text-indigo-400 text-lg italic">${selectedOrder.negotiation?.proposedPrice || selectedOrder.totalAmount}.00</span> for this design. 
+                    This change is due to material costs or design complexity.
+                  </p>
+                  <div className="flex flex-wrap gap-4">
+                    <button 
+                      onClick={() => handleNegotiation(selectedOrder._id, 'ACCEPT')}
+                      className="px-8 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all shadow-lg"
+                    >
+                      Accept New Price
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const counter = prompt("Enter your counter-offer price ($):", selectedOrder.negotiation.proposedPrice - 20);
+                        if (counter) handleNegotiation(selectedOrder._id, 'COUNTER', counter);
+                      }}
+                      className="px-8 py-3 bg-white/5 border border-white/10 text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600/20 hover:text-white transition-all"
+                    >
+                      Make One-Time Counter Offer
+                    </button>
+                    <button 
+                      onClick={() => handleNegotiation(selectedOrder._id, 'REJECT')}
+                      className="px-8 py-3 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all"
+                    >
+                      Decline & Cancel Order
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {selectedOrder.negotiation?.status === 'Countered' && (
+                <div className="mb-10 p-8 rounded-3xl bg-amber-500/10 border border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.15)] relative overflow-hidden">
+                   <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.4em] mb-4">Awaiting Admin Response</h4>
+                   <p className="text-[12px] text-white font-bold leading-relaxed">
+                     You have countered with <span className="text-amber-500 text-lg italic">${selectedOrder.negotiation.counterPrice}.00</span>. 
+                     The administration node is currently reviewing your proposal.
+                   </p>
+                </div>
+              )}
 
               <button onClick={() => window.print()} className="w-full py-5 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.4em] hover:bg-blue-600 hover:text-white transition-all">
                 Download Receipt / Invoice

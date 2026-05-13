@@ -1,0 +1,182 @@
+import axios from 'axios';
+
+// Backend server ka base rasta (Localhost)
+// Backend server ka base rasta (Dynamic for Deployment)
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API = axios.create({ baseURL: API_BASE_URL });
+
+// ==========================================
+// 🔐 AUTHENTICATION APIS
+// ==========================================
+export const loginUser = (formData) => API.post('/auth/login', formData);
+export const registerUser = (formData) => API.post('/auth/register', formData);
+export const forgotPassword = (email) => API.post('/auth/forgot-password', { email });
+export const resetPassword = (token, password) => API.post(`/auth/reset-password/${token}`, { password });
+export const googleLogin = (idToken) => API.post('/auth/google-login', { idToken });
+
+// ==========================================
+// 📦 PRODUCT INVENTORY APIS
+// ==========================================
+
+// 1. Naya product database mein add karna
+export const addProduct = (productData, token) => {
+  return API.post('/products/add', productData, {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+// 2. Database se saray products mangwana
+export const getProducts = () => API.get('/products');
+
+// 3. Database se sirf kisi aik product ki detail mangwana
+export const getProductById = (id) => API.get(`/products/${id}`);
+
+// 4. Product Update karna (Pre-filled data save karne ke liye)
+export const updateProduct = (id, productData, token) => {
+  return API.patch(`/products/${id}`, productData, {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+// 5. Product Delete (Purge) karna
+export const deleteProduct = (id, token) => {
+  return API.delete(`/products/${id}`, {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+// ==========================================
+// 🛒 ORDER & TRANSACTION APIS
+// ==========================================
+
+// 1. Naya order place karna
+export const placeOrder = (orderData, token) => {
+  return API.post('/orders/place', orderData, {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+// 2. User ke apne orders mangwana (Vault/Dashboard)
+export const getMyOrders = (token) => {
+  return API.get('/orders/myorders', {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+// 3. Admin ke liye saray users ke orders mangwana
+export const getAllOrdersAdmin = (token) => API.get('/orders/admin/all', {
+  headers: { 'x-auth-token': token }
+});
+
+// 4. Order status update karna (Pending to Delivered)
+export const updateOrderStatus = (id, payload, token) => API.patch(`/orders/status/${id}`, payload, {
+  headers: { 'x-auth-token': token }
+});
+
+// 5. Admin performance analytics (Executive only)
+export const getAdminPerformance = (token) => API.get('/orders/admin/performance', {
+  headers: { 'x-auth-token': token }
+});
+
+// 6. User Negotiation (Accept/Counter)
+export const userNegotiate = (id, payload, token) => API.patch(`/orders/negotiate/${id}`, payload, {
+  headers: { 'x-auth-token': token }
+});
+
+// 7. Admin Negotiation (Accept/Reject counter)
+export const adminNegotiate = (id, payload, token) => API.patch(`/orders/negotiate/admin/${id}`, payload, {
+  headers: { 'x-auth-token': token }
+});
+
+// ==========================================
+// 🛡️ ADVANCED ADMINISTRATIVE APIS
+// ==========================================
+
+// 1. Role Change (Developer/Sub-Owner only)
+export const manageUserRole = (targetUserId, newRole, token) => {
+  return API.patch('/auth/manage-role', { targetUserId, newRole }, {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+// 2. Request Delete (Admin only)
+export const requestDeleteProduct = (id, token) => {
+  return API.post(`/products/request-delete/${id}`, {}, {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+// 3. Get All Users (For Management)
+export const getAllUsers = (token) => API.get('/auth/users', {
+  headers: { 'x-auth-token': token }
+});
+
+// 4. Change Password (All users)
+export const changePassword = (payload, token) => {
+  return API.post('/auth/change-password', payload, {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+// 5. Update Profile (All users)
+export const updateProfile = (payload, token) => {
+  return API.patch('/auth/update-profile', payload, {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+export const getMyActivity = (token) => {
+  return API.get('/auth/my-activity', {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+export const getAllActivity = (token) => {
+  return API.get('/auth/all-activity', {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+// ==========================================
+// 🧠 NEURAL AI & SYNTHESIS APIS
+// ==========================================
+
+export const generateImage = (prompt, token) => {
+  return API.post('/ai/generate', { prompt }, {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+export const getAiSuggestion = (prompt, token) => {
+  return API.post('/ai/suggest', { prompt }, {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+// ==========================================
+// 🕒 DESIGN HISTORY & SESSIONS APIS
+// ==========================================
+
+export const saveSession = (sessionData, token) => {
+  return API.post('/sessions', sessionData, {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+export const getSessions = (token) => {
+  return API.get('/sessions', {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+export const getSessionById = (id, token) => {
+  return API.get(`/sessions/${id}`, {
+    headers: { 'x-auth-token': token }
+  });
+};
+
+export const deleteSession = (id, token) => {
+  return API.delete(`/sessions/${id}`, {
+    headers: { 'x-auth-token': token }
+  });
+};
